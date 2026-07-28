@@ -46,3 +46,25 @@ Only add the prompts, not the replies you gave.
 
 Just the prompts, remove everything else.
 
+Push the Day 1 work to my GitHub repo. Make sure the .env file does not go up.
+
+Now we will start Day 2. First tell me what the Day 2 tasks are, and give me a plan of how we will build it chunk by chunk.
+
+Yes, go with your suggestion — the agent should only do the extraction and the controller should do the lookups. Start the first chunk.
+
+Make a wrapper for registering tools that also saves every call into the tool_call_logs table. Do this logging part now instead of Day 7, so all the tools we make after this get it automatically.
+
+Now make lookup_product and create_product with Zod schemas. Match on the normalized name, and if the product is not found then return some near matches so we can ask "did you mean sugar?".
+
+Yes, follow through on that — do not show lookup_product and create_product to the model, only the controller should call them.
+
+Now make find_or_create_customer. It should not create the customer on its own, only when we clearly ask for it, otherwise a typo will make a duplicate customer and mess up his whole history.
+
+Now make save_sale. It should write the sale and the line items in one transaction, save the price on the line item, and it must stay off the model's tool list.
+
+Now write the extraction prompt so a sentence like "2kg rice and 2kg sugar to Ali" gives the customer and the items properly. Also make a test file with different sentences so we can check it every time we change the prompt.
+
+Fix the dozen problem — "1 dozen eggs" should be quantity 1 with unit dozen, not quantity 12.
+
+
+
