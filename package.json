@@ -1,0 +1,16 @@
+{
+  "name": "sales-agent",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Conversational sales-logging agent for small shop owners",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "up": "docker compose up --build",
+    "down": "docker compose down",
+    "db:migrate": "docker compose run --rm mcp-server npx prisma migrate dev",
+    "db:seed": "docker compose run --rm mcp-server npx prisma db seed",
+    "db:studio": "docker compose run --rm --service-ports mcp-server npx prisma studio"
+  }
+}

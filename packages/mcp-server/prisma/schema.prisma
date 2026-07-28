@@ -1,0 +1,88 @@
+// The only Prisma schema in the project. It lives inside mcp-server on purpose:
+// no other package declares a Prisma dependency, so the "all database access is
+// behind the MCP server" rule is enforced by the dependency graph, not by habit.
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" covers local tooling; the musl target is what node:24-alpine runs.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id             Int      @id @default(autoincrement())
+  name           String
+  // Unique so a typo can never silently create a second "Ali" (risk R2).
+  normalizedName String   @unique @map("normalized_name")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  sales Sale[]
+
+  @@map("customers")
+}
+
+model Product {
+  id             Int      @id @default(autoincrement())
+  name           String
+  normalizedName String   @unique @map("normalized_name")
+  unit           String
+  currentPrice   Decimal  @map("current_price") @db.Decimal(12, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  saleItems SaleItem[]
+
+  @@map("products")
+}
+
+model Sale {
+  id          Int      @id @default(autoincrement())
+  customerId  Int      @map("customer_id")
+  totalAmount Decimal  @map("total_amount") @db.Decimal(12, 2)
+  soldAt      DateTime @default(now()) @map("sold_at")
+
+  customer Customer   @relation(fields: [customerId], references: [id])
+  items    SaleItem[]
+
+  @@index([soldAt])
+  @@index([customerId])
+  @@map("sales")
+}
+
+model SaleItem {
+  id        Int     @id @default(autoincrement())
+  saleId    Int     @map("sale_id")
+  productId Int     @map("product_id")
+  quantity  Decimal @db.Decimal(10, 3)
+
+  // Copied from products.current_price at sale time and never re-read. A later
+  // catalogue price change must not rewrite what this sale actually charged.
+  unitPriceSnapshot Decimal @map("unit_price_snapshot") @db.Decimal(12, 2)
+  lineTotal         Decimal @map("line_total") @db.Decimal(12, 2)
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  // Deliberately not cascading: a product must not be deletable out from under
+  // the sales that reference it.
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([saleId])
+  @@index([productId])
+  @@map("sale_items")
+}
+
+// Observability sidecar. No relations to the business tables by design.
+model ToolCallLog {
+  id         Int      @id @default(autoincrement())
+  toolName   String   @map("tool_name")
+  arguments  Json
+  status     String
+  durationMs Int?     @map("duration_ms")
+  calledAt   DateTime @default(now()) @map("called_at")
+
+  @@index([calledAt])
+  @@index([toolName])
+  @@map("tool_call_logs")
+}
