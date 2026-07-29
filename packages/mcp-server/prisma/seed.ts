@@ -9,7 +9,9 @@ const prisma = new PrismaClient();
 const CATALOGUE: Array<{ name: string; unit: string; price: number }> = [
   { name: "Rice", unit: "kg", price: 300 },
   { name: "Sugar", unit: "kg", price: 100 },
-  { name: "Cooking Oil", unit: "litre", price: 500 },
+  // "Oil", not "Cooking Oil": the owner says "oil", and the catalogue name is
+  // what lookup_product matches against.
+  { name: "Oil", unit: "litre", price: 500 },
   { name: "Ghee", unit: "kg", price: 1200 },
   { name: "Flour", unit: "kg", price: 120 },
   { name: "Lentils", unit: "kg", price: 250 },

@@ -66,5 +66,35 @@ Now write the extraction prompt so a sentence like "2kg rice and 2kg sugar to Al
 
 Fix the dozen problem — "1 dozen eggs" should be quantity 1 with unit dozen, not quantity 12.
 
+Add retry with backoff for the Groq rate limit, and put some delay between the test calls so a rate limit error does not look like a wrong answer.
+
+Show me properly that "2kg rice and 2kg sugar to Ali" gives a correct structured object using the MCP tools, not just a test saying it passed.
+
+Push the Day 2 work to GitHub.
+
+First tell me the Day 3 tasks, then give me the plan chunk by chunk.
+
+Yes go with your suggestions — use a separate small prompt for the clarification answers, ask about one gap per turn, and treat the customer as a draft-level check. Start chunk 1.
+
+Make the draft sale object and a session store on the server side. Keep the draft separate from the LangChain message history.
+
+Now make the per-item checklist — product known, quantity present, price resolved. Keep it a pure function with no model and no database so it can be tested on its own.
+
+Also make the resolve step that fills the draft with the catalogue facts using the MCP tools.
+
+Now make the targeted questions. Use templates instead of asking the model, so the wording stays the same every time and we don't waste tokens.
+
+Now finish the rest of chunk 3 — the small prompt that reads the owner's answer, and the part that applies it to only the item we asked about.
+
+Now make the controller that ties it all together — extract, resolve, check, then either ask one question or show the summary.
+
+Fix the oil problem. The catalogue says "Cooking Oil" but the owner says "oil", so the lookup fails and it asks the wrong question.
+
+Also fix the bug where answering "2 litres" to a product question creates a product named "2 litres".
+
+Now make the CLI so I can type the whole flow myself. It should also work with piped input so we can use it in the test script.
+
+Now write verify-day3.ps1. It must check that exactly one question is asked, not just one or more. Also clean up the test customer so the database is left as it was.
+
 
 

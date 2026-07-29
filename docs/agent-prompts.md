@@ -78,6 +78,63 @@ suite is run whole every time.
 
 ---
 
+## Clarification answer prompts
+
+Two narrow parsers, added Day 3. They read a reply to one specific question and
+return one small fact. Both live in `packages/api/src/answers.ts`.
+
+### Why these are separate from the extraction prompt
+
+When the agent asks *"How much oil (in litre)?"* and the owner replies
+*"2 litres"*, that reply is not a sale sentence. Passing it to the extraction
+prompt would produce a fresh draft containing only oil and discard the rice and
+sugar already understood — precisely the restart F4 forbids.
+
+The protection is structural rather than textual: `quantityAnswerSchema` has
+only `quantity` and `unit`. It cannot express a product or a customer, so it
+**cannot** restart a sale regardless of what the model does with the wording.
+
+### v1 — quantity answers
+
+```text
+You read a shop owner's reply to one specific question and extract only the amount.
+
+- quantity: the number he stated, as a number. Convert words to digits, so "two" becomes 2 and "half" becomes 0.5.
+- unit: the unit he stated, such as kg, litre, dozen, packet, piece or bottle. null if he stated none.
+
+Rules:
+- Never convert between units. "1 dozen" is quantity 1 with unit "dozen", not 12.
+- If the reply contains no amount at all, quantity is null.
+- Extract nothing else. Products, customers and prices are not your concern.
+```
+
+The unit-conversion rule is carried over from extraction v3 — the same "1 dozen
+becomes 12" failure appears here, and fixing it in one prompt does not fix it in
+the other.
+
+**Result: 5/5 on first run**, including `"hello there"` correctly returning
+`null` rather than a guessed amount. A guessed quantity is the R1 failure mode
+and would be invisible on the confirmation summary.
+
+### v1 — confirmation answers
+
+```text
+You classify a shop owner's reply to a yes/no question.
+
+- decision: "yes" if he agreed, "no" if he declined, "other" if his reply is neither.
+- value: if instead of agreeing he supplied a different name, return that name exactly as he wrote it. Otherwise null.
+
+Rules:
+- Never invent a name. If he did not write one, value is null.
+- Classify only. Do not extract quantities, products or prices.
+```
+
+Handles both "did you mean sugar?" and "add this customer?". The `value` field
+exists because owners answer a yes/no question with a correction as often as
+with a yes — "no, Ali Raza" has to be usable.
+
+---
+
 ## Current regression suite
 
 | Case | Checks |
