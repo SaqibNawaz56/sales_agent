@@ -10,6 +10,24 @@ export function registerCustomerTools(server: McpServer): void {
   defineTool(
     server,
     {
+      name: "list_customers",
+      title: "List every customer",
+      description:
+        "Returns every customer's id and name. Used by the controller to build the pseudonymisation map before any model call. Never exposed to the model — it returns real names by definition.",
+      inputSchema: {},
+    },
+    async () => {
+      const customers = await prisma.customer.findMany({
+        select: { id: true, name: true },
+        orderBy: { id: "asc" },
+      });
+      return { customers };
+    },
+  );
+
+  defineTool(
+    server,
+    {
       name: "find_or_create_customer",
       title: "Find or create a customer",
       description:

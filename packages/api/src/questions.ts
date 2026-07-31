@@ -1,5 +1,5 @@
 import type { GapLocation } from "./checklist.js";
-import type { DraftSale, PendingQuestion } from "./draft.js";
+import type { DraftItem, DraftSale, PendingQuestion } from "./draft.js";
 
 /**
  * Turns a checklist gap into the question to ask.
@@ -15,6 +15,26 @@ import type { DraftSale, PendingQuestion } from "./draft.js";
 function list(names: string[]): string {
   if (names.length === 1) return names[0];
   return `${names.slice(0, -1).join(", ")} or ${names[names.length - 1]}`;
+}
+
+/**
+ * Opens the new-product sub-loop.
+ *
+ * Asks for the unit alongside the price when the owner never said one — "1
+ * ghee to Ali" gives no unit, and create_product needs one. Combining them
+ * costs one turn instead of two, and the answers cannot be confused for each
+ * other.
+ */
+export function buildPriceQuestion(
+  item: DraftItem,
+  index: number,
+): PendingQuestion {
+  const question =
+    item.rawUnit !== null
+      ? `What's the price of ${item.rawProduct} per ${item.rawUnit}?`
+      : `What's the price of ${item.rawProduct}, and per what unit (kg, litre, packet)?`;
+
+  return { kind: "new_product_price", itemIndex: index, question };
 }
 
 export function buildQuestion(

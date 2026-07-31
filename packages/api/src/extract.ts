@@ -49,8 +49,8 @@ export const EXTRACTION_SYSTEM_PROMPT = `You extract structured sale data from a
 
 Decide the intent first:
 - "log_sale" when the owner is recording something he has just sold.
-- "query" when he is asking about past sales.
-- "other" for anything else.
+- "query" when he is asking anything about his sales or his business, including vague questions like "how is business?" or "how are things going?".
+- "other" only when the message is neither — a greeting, or something unrelated to the shop.
 
 Then extract:
 - customer: the person the goods were sold to, written exactly as the owner wrote it. null if no person is named.
@@ -77,7 +77,7 @@ Rules you must follow:
  * every price is resolved afterwards by the controller.
  */
 export async function extractSale(message: string): Promise<ExtractedSale> {
-  const model = createModel().withStructuredOutput(extractedSaleSchema, {
+  const model = createModel("extract").withStructuredOutput(extractedSaleSchema, {
     name: "extracted_sale",
   });
 

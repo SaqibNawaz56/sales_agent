@@ -4,6 +4,7 @@ import { prisma } from "./db.js";
 import { defineTool } from "./tools/define.js";
 import { registerCustomerTools } from "./tools/customers.js";
 import { registerProductTools } from "./tools/products.js";
+import { registerQueryTools } from "./tools/queries.js";
 import { registerSaleTools } from "./tools/sales.js";
 
 /**
@@ -38,6 +39,7 @@ export function buildServer(): McpServer {
   registerProductTools(server);
   registerCustomerTools(server);
   registerSaleTools(server);
+  registerQueryTools(server);
 
   return server;
 }

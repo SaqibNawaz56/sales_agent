@@ -1,6 +1,11 @@
-import { parseConfirmationAnswer, parseQuantityAnswer } from "./answers.js";
+import {
+  parseConfirmationAnswer,
+  parsePriceAnswer,
+  parseQuantityAnswer,
+} from "./answers.js";
 import type { DraftSale } from "./draft.js";
 import { callServerTool } from "./mcp.js";
+import { buildPriceQuestion } from "./questions.js";
 
 /**
  * Applies a reply to the one thing that was asked about.
@@ -37,6 +42,11 @@ interface CustomerResult {
   found: boolean;
   created: boolean;
   customer?: { id: number; name: string };
+}
+
+interface CreateProductResult {
+  created: boolean;
+  product?: { id: number; name: string; unit: string; currentPrice: number };
 }
 
 export async function applyAnswer(
@@ -92,12 +102,10 @@ export async function applyAnswer(
     }
 
     if (answer.decision === "yes") {
-      // "Add it?" -> yes. Creating it needs a price, which is the Day 4
-      // sub-loop. Until then the gap stands.
-      return {
-        understood: false,
-        note: "Adding a new product needs its price — that comes next.",
-      };
+      // "Add it?" -> yes. Pause this item and ask for the price (F5). The rest
+      // of the sale is untouched and resumes once the product exists.
+      draft.pending = buildPriceQuestion(item, pending.itemIndex);
+      return { understood: true };
     }
 
     if (answer.decision === "no") {
@@ -109,6 +117,57 @@ export async function applyAnswer(
     }
 
     return { understood: false, note: "Sorry, was that a yes or a no?" };
+  }
+
+  if (pending.kind === "new_product_price") {
+    const item = draft.items[pending.itemIndex];
+    const answer = await parsePriceAnswer(pending.question, reply);
+
+    const price = answer.price ?? pending.priceSoFar ?? null;
+    const unit = answer.unit ?? item.rawUnit ?? null;
+
+    if (price === null) {
+      // A price is never inferred. This is the single entry point for pricing
+      // data, so a guess here would poison every future sale of this product.
+      return { understood: false, note: "I didn't catch a price there." };
+    }
+
+    if (unit === null) {
+      // Keep the price and ask only for what is still missing, rather than
+      // making him restate both.
+      draft.pending = {
+        kind: "new_product_price",
+        itemIndex: pending.itemIndex,
+        question: `Got ${price}. And ${item.rawProduct} is sold per what unit — kg, litre, packet?`,
+        priceSoFar: price,
+      };
+      return { understood: true };
+    }
+
+    const created = await callServerTool<CreateProductResult>("create_product", {
+      name: item.rawProduct,
+      unit,
+      price,
+    });
+
+    if (!created.product) {
+      return { understood: false, note: "I couldn't add that product." };
+    }
+
+    // Resume: the item is filled from what the catalogue now holds, not from
+    // what the owner typed, so it goes through the same path as every other
+    // product from here on.
+    item.productId = created.product.id;
+    item.productName = created.product.name;
+    item.unit = created.product.unit;
+    item.unitPrice = created.product.currentPrice;
+    item.suggestions = [];
+    draft.pending = null;
+
+    return {
+      understood: true,
+      note: `Added ${created.product.name} at ${created.product.currentPrice} per ${created.product.unit}.`,
+    };
   }
 
   // pending.kind === "customer"

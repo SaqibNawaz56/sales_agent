@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { prisma } from "../db.js";
 import { findNearMatches } from "../match.js";
-import { normalize } from "../normalize.js";
+import { normalize, toDisplayName } from "../normalize.js";
 import { defineTool } from "./define.js";
 
 /** Prisma Decimal does not serialise usefully to JSON; send plain numbers. */
@@ -108,7 +108,14 @@ export function registerProductTools(server: McpServer): void {
       }
 
       const product = await prisma.product.create({
-        data: { name, normalizedName: normalized, unit, currentPrice: price },
+        data: {
+          // Stored title-cased so a product added mid-sale sits consistently
+          // alongside the seeded catalogue.
+          name: toDisplayName(name),
+          normalizedName: normalized,
+          unit: normalize(unit),
+          currentPrice: price,
+        },
       });
 
       return {

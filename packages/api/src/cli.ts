@@ -11,7 +11,7 @@
  */
 import { createInterface } from "node:readline";
 
-import { handleMessage } from "./controller.js";
+import { cancelSale, confirmSale, handleMessage } from "./controller.js";
 import { closeMcpClient } from "./mcp.js";
 import { clearDraft, getDraft } from "./session.js";
 
@@ -19,10 +19,12 @@ const SESSION_ID = process.env.CLI_SESSION_ID ?? "cli";
 
 const HELP = `
 Commands
-  /new     discard the sale in progress and start again
-  /draft   show the raw draft state
-  /help    this message
-  /quit    exit
+  /confirm  save the sale shown above
+  /cancel   discard it without saving
+  /new      abandon the sale in progress and start again
+  /draft    show the raw draft state
+  /help     this message
+  /quit     exit
 
 Anything else is treated as a message to the shop assistant.
 Try:  2kg rice, 2kg sugar and oil to Ali
@@ -30,7 +32,7 @@ Try:  2kg rice, 2kg sugar and oil to Ali
 
 function banner(): void {
   console.log("Sales agent — type what you sold, or /help for commands.");
-  console.log("Nothing is written to the database yet; the confirmation gate arrives on Day 4.\n");
+  console.log("Sales are saved only after /confirm.\n");
 }
 
 async function respondTo(line: string): Promise<boolean> {
@@ -53,6 +55,23 @@ async function respondTo(line: string): Promise<boolean> {
   if (input === "/draft") {
     console.log(JSON.stringify(getDraft(SESSION_ID), null, 2));
     console.log("");
+    return true;
+  }
+
+  // Confirmation is an explicit command, never a parsed "yes". If the model
+  // classified the reply, the gate would be probabilistic again and a
+  // misreading would write a sale the owner never approved — which is the
+  // failure R7 exists to prevent. This is the CLI's equivalent of the React
+  // confirm button being a deliberate physical action.
+  if (input === "/confirm") {
+    const result = await confirmSale(SESSION_ID);
+    console.log(`\n${result.reply}\n`);
+    return true;
+  }
+
+  if (input === "/cancel") {
+    const result = cancelSale(SESSION_ID);
+    console.log(`\n${result.reply}\n`);
     return true;
   }
 

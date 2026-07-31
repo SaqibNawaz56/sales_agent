@@ -96,5 +96,51 @@ Now make the CLI so I can type the whole flow myself. It should also work with p
 
 Now write verify-day3.ps1. It must check that exactly one question is asked, not just one or more. Also clean up the test customer so the database is left as it was.
 
+Do not commit Day 3 yet. Tell me the Day 4 tasks first and give me the plan chunk by chunk.
+
+Pick the best option for each of those decisions yourself and go ahead.
+
+Now make the new-product sub-loop. When the product is unknown and I say yes, ask me the price, add it to the catalogue, then carry on with the same sale.
+
+Now make the confirmation gate. A finished sale should be held until I confirm or cancel, so typing another message does not throw it away.
+
+Now do the write path. The controller should call save_sale itself after I confirm, and that must be the only place it is called.
+
+Add /confirm and /cancel to the CLI. Do not use the model to decide if I said yes, it should be a proper command.
+
+Fix the ghee problem — my proposal's example needs ghee to be missing from the catalogue so the add-product flow can be shown.
+
+Also fix the lowercase product name. If I type "ghee" it should be saved as "Ghee" like the seeded ones.
+
+Now write verify-day4.ps1. It must check both parts — the sale with a new product is written correctly, and a rejected sale writes nothing.
+
+Do not commit Day 4 and continue to Day 5.
+
+Now make the three query tools — daily total, sales by customer, sales by product.
+
+Now do the pseudonymisation. Replace the customer names with tokens before anything is sent to the model, and put the real names back after.
+
+Now do the query routing and format the answers in code so the figures never go to the model.
+
+Now expose POST /api/chat and POST /api/sales/confirm.
+
+Fix the vague question — "how is business going?" should go to the query path and get the "I can answer three things" reply, not the sale reply.
+
+Now write verify-day5.ps1 and check all three questions work through the HTTP API.
+
+Continue to Day 6. Make the React chat UI in a container like everything else.
+
+The confirmation card should be a proper table with Confirm and Cancel buttons, and it must use the server's figures instead of adding them up in the browser.
+
+Now write verify-day6.ps1, and tell me honestly what it cannot check without a browser.
+
+Go on to Day 7. Add the client-side callback handler for the model calls.
+
+Now write the integration tests with Jest and Supertest — happy path, missing quantity, new product, rejected confirmation, and save_sale not being in the tool list.
+
+Now write the README. Include the places where the code differs from my proposal and why.
+
+Now write the demo script. It must run start to finish on its own with no typing from me.
+
 
 

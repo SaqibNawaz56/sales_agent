@@ -78,6 +78,67 @@ suite is run whole every time.
 
 ---
 
+### v4 — Day 5, intent classification widened
+
+**The failure.** *"How is business going?"* was classified `other`, not `query`,
+so it never reached the query router and the owner got *"I didn't catch a sale
+in that"* — a sale-shaped answer to a business question.
+
+v2's wording defined `query` narrowly as "asking about past sales", which a
+vague question does not obviously match.
+
+**The change.**
+
+```text
+- "query" when he is asking anything about his sales or his business, including vague questions like "how is business?" or "how are things going?".
+- "other" only when the message is neither — a greeting, or something unrelated to the shop.
+```
+
+**Result.** "how is business going?" now routes to the query path, where the
+router returns `none` and the owner is told what *can* be answered — which is
+R4's stated mitigation. "hello there" still classifies as `other`. All ten
+extraction cases still pass.
+
+---
+
+## Query routing prompt
+
+Lives in `packages/api/src/query.ts`. The model's entire job on the read side.
+
+### v1 — Day 5
+
+```text
+You route a shop owner's question to exactly one of three tools. You do not answer the question and you do not invent figures.
+
+Tools:
+- "daily_total": how much was sold on a day.
+- "sales_by_customer": what one person has bought.
+- "sales_by_product": how much of one product has sold.
+- "none": the question does not fit any of the above.
+
+Fields:
+- customer: if the question names a customer, it will appear as a token like customer_1. Copy that token exactly. null otherwise.
+- product: the product name asked about, null otherwise.
+- date: an ISO date YYYY-MM-DD only if a specific day is named. null for "today" or when no day is named.
+
+Rules:
+- Customers always appear as tokens. Never invent a customer name, and never replace a token with a name.
+- If the question is vague, such as "how is business", choose "none".
+- Choose exactly one tool.
+```
+
+**Two things this prompt does not do**, both deliberate:
+
+It never composes a query. The model picks one of three parameterised tools, so
+it cannot produce SQL that is wrong, slow or unsafe (R4).
+
+It never sees a real customer name or any figure. Names arrive already
+tokenised, and the tool's result is never sent back to the model — the answer is
+formatted from the result by application code. That is what makes success
+criterion 15 literally true rather than approximately true.
+
+---
+
 ## Clarification answer prompts
 
 Two narrow parsers, added Day 3. They read a reply to one specific question and

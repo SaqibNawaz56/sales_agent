@@ -36,8 +36,17 @@ export interface DraftItem {
   suggestions: Suggestion[];
 }
 
+/**
+ * "awaiting_confirmation" is a held state, not a passing one. A draft that has
+ * reached it must be explicitly confirmed or cancelled — a new message must not
+ * silently replace it, or a sale the owner was about to approve disappears
+ * because he typed the next one too quickly.
+ */
+export type DraftStatus = "building" | "awaiting_confirmation";
+
 export interface DraftSale {
   createdAt: string;
+  status: DraftStatus;
   /** The message that started this draft, for context in questions. */
   originalMessage: string;
 
@@ -54,11 +63,23 @@ export interface DraftSale {
 export type PendingQuestion =
   | { kind: "missing_quantity"; itemIndex: number; question: string }
   | { kind: "unknown_product"; itemIndex: number; question: string }
+  // The new-product sub-loop (F5). Not produced by the checklist — the
+  // checklist only reports that a product is unknown. This is entered when the
+  // owner says yes to adding it, and is the only route by which a price enters
+  // the system.
+  | {
+      kind: "new_product_price";
+      itemIndex: number;
+      question: string;
+      /** Carries a price already given while the unit is still being asked. */
+      priceSoFar?: number;
+    }
   | { kind: "customer"; itemIndex: null; question: string };
 
 export function emptyDraft(originalMessage: string): DraftSale {
   return {
     createdAt: new Date().toISOString(),
+    status: "building",
     originalMessage,
     customerName: null,
     customerId: null,

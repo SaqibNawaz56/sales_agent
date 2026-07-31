@@ -1,6 +1,8 @@
 import { ChatGroq } from "@langchain/groq";
 
-export function createModel(): ChatGroq {
+import { callbacksFor } from "./callbacks.js";
+
+export function createModel(label = "model"): ChatGroq {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     throw new Error(
@@ -19,5 +21,7 @@ export function createModel(): ChatGroq {
     // trip a 429 mid-conversation. Retrying with backoff turns that from a
     // failed sale into a pause. This is the R6 mitigation the proposal names.
     maxRetries: 5,
+    // Client-side tracing. Enabled with AGENT_TRACE=1; see callbacks.ts.
+    callbacks: callbacksFor(label),
   });
 }

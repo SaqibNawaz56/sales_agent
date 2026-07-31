@@ -12,7 +12,9 @@ const CATALOGUE: Array<{ name: string; unit: string; price: number }> = [
   // "Oil", not "Cooking Oil": the owner says "oil", and the catalogue name is
   // what lookup_product matches against.
   { name: "Oil", unit: "litre", price: 500 },
-  { name: "Ghee", unit: "kg", price: 1200 },
+  // Ghee is deliberately NOT seeded. The proposal's worked example (Figure 3)
+  // has lookup_product("ghee") miss, so the owner is offered the new-product
+  // sub-loop and adds it at 1200 per kg. Seeding it would break that demo.
   { name: "Flour", unit: "kg", price: 120 },
   { name: "Lentils", unit: "kg", price: 250 },
   { name: "Chickpeas", unit: "kg", price: 280 },
