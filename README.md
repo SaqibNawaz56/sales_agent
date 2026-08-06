@@ -125,9 +125,31 @@ packages/
   mcp-server/     every tool, Prisma, the only database access in the system
     prisma/       schema, migrations, seed
     src/tools/    define.ts wraps registration so every call is logged
-  api/            controller, extraction, checklist, HTTP endpoints, CLI
+
+  api/            NestJS. The deterministic controller and the write path.
+    src/
+      http/       Nest controllers, DTOs, the error filter
+      sales/      SaleService — the outer loop, and the only save_sale call
+      draft/      the sale being assembled (pure)
+      checklist/  per-item completeness rules (pure)
+      questions/  clarification question templates (pure)
+      clarification/  applying a reply to the one gap that was asked about
+      catalogue/  resolution against the database, via MCP
+      reporting/  the read path, including customer pseudonymisation
+      llm/        every model call, prompt and output schema — nothing outside
+      mcp/        tool access and the agent allowlist
+      session/    in-memory draft store
+      summary/    the itemised summary shown before a write
+      cli/        the terminal client
+      scripts/    per-day proof scripts
     tests/        Jest integration tests
-  web/            React + Vite chat UI
+
+  frontend/       React + Vite chat UI
+    src/
+      components/ one component per file
+      hooks/      conversation state, session id, scroll anchoring
+      api/        one file per endpoint; resolve-sale.ts is the only write
+      styles/     one stylesheet per component
 scripts/          per-day verification
 docs/             agent prompt iteration history
 ```

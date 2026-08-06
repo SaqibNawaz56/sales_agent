@@ -4,12 +4,12 @@
  * The central assertion is the F4 one — after answering "how much oil?", every
  * other item in the draft must be byte-for-byte what it was before.
  */
-import { parseQuantityAnswer } from "../answers.js";
-import { applyAnswer } from "../apply.js";
-import { runChecklist } from "../checklist.js";
-import { emptyDraft, newItem, type DraftSale } from "../draft.js";
-import { closeMcpClient } from "../mcp.js";
-import { buildQuestion } from "../questions.js";
+import { parseQuantityAnswer } from "../llm";
+import { applyAnswer } from "../clarification";
+import { runChecklist } from "../checklist";
+import { emptyDraft, newItem, type DraftSale } from "../draft";
+import { closeMcpClient } from "../mcp";
+import { buildQuestion } from "../questions";
 
 const PACING_MS = 4_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

@@ -1,9 +1,9 @@
 /**
  * Question generation. No model, no database — templates over a known gap.
  */
-import { runChecklist } from "../checklist.js";
-import { emptyDraft, newItem, type DraftSale } from "../draft.js";
-import { buildQuestion } from "../questions.js";
+import { runChecklist } from "../checklist";
+import { emptyDraft, newItem, type DraftSale } from "../draft";
+import { buildQuestion } from "../questions";
 
 let failures = 0;
 

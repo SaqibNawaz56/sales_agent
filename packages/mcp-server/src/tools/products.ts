@@ -15,6 +15,24 @@ export function registerProductTools(server: McpServer): void {
   defineTool(
     server,
     {
+      name: "list_products",
+      title: "List every product",
+      description:
+        "Returns every product's name and unit. Used by the controller to build the vocabulary hint sent with dictation audio, so the transcriber spells the shop's own products correctly. Not exposed to the model — the agent looks products up one at a time by name.",
+      inputSchema: {},
+    },
+    async () => {
+      const products = await prisma.product.findMany({
+        select: { id: true, name: true, unit: true },
+        orderBy: { name: "asc" },
+      });
+      return { products };
+    },
+  );
+
+  defineTool(
+    server,
+    {
       name: "lookup_product",
       title: "Look up a product",
       description:

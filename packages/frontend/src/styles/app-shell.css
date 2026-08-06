@@ -1,0 +1,12 @@
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  height: 100vh;
+  /* dvh accounts for mobile browser chrome, which 100vh does not; the composer
+     would otherwise sit under the address bar. */
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-inline: 1px solid var(--line);
+}

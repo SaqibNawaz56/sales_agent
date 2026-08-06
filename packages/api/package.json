@@ -2,18 +2,19 @@
   "name": "@sales-agent/api",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/main.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/main.js",
     "prove-agent": "tsx src/scripts/prove-agent.ts",
-    "cli": "tsx src/cli.ts",
-    "test": "npx --node-options=--experimental-vm-modules jest"
+    "cli": "tsx src/cli/main.ts",
+    "test": "jest"
   },
   "devDependencies": {
+    "@nestjs/testing": "^11.1.28",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.2.0",
     "@types/node": "^24.13.3",
     "@types/supertest": "^7.2.1",
     "jest": "^30.4.2",
@@ -26,8 +27,11 @@
     "@langchain/core": "^1.2.3",
     "@langchain/groq": "^1.3.1",
     "@langchain/mcp-adapters": "^1.1.3",
-    "express": "^5.2.1",
-    "langchain": "^1.5.4",
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/platform-express": "^11.1.28",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
     "zod": "^3.25.76"
   }
 }

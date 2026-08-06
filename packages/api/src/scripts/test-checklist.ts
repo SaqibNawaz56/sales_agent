@@ -6,10 +6,10 @@
  * these assertions cannot be knocked over by an extraction change or a Groq
  * rate limit.
  */
-import { runChecklist } from "../checklist.js";
-import { emptyDraft, newItem, type DraftSale } from "../draft.js";
-import { closeMcpClient } from "../mcp.js";
-import { resolveDraft } from "../resolve.js";
+import { runChecklist } from "../checklist";
+import { emptyDraft, newItem, type DraftSale } from "../draft";
+import { closeMcpClient } from "../mcp";
+import { resolveDraft } from "../catalogue";
 
 let failures = 0;
 

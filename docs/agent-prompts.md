@@ -35,8 +35,10 @@ has to override the model.
 
 ## Extraction prompt
 
-Turns one free-form sale sentence into `customer + items[]`. Lives in
-`packages/api/src/extract.ts`. The regression suite is
+Turns one free-form sale sentence into `customer + items[]`. The prompt is
+`packages/api/src/llm/prompts/extraction.prompt.ts`, its output schema is
+`packages/api/src/llm/schemas/extracted-sale.schema.ts`, and the call itself is
+`packages/api/src/llm/extract-sale.ts`. The regression suite is
 `packages/api/src/scripts/test-extraction.ts`.
 
 ### v2 — Day 2, first working version
@@ -142,7 +144,11 @@ criterion 15 literally true rather than approximately true.
 ## Clarification answer prompts
 
 Two narrow parsers, added Day 3. They read a reply to one specific question and
-return one small fact. Both live in `packages/api/src/answers.ts`.
+return one small fact. The prompts are `quantity-answer.prompt.ts` and
+`price-answer.prompt.ts` under `packages/api/src/llm/prompts/`, alongside
+`confirmation-answer.prompt.ts`; their schemas sit in
+`packages/api/src/llm/schemas/` and the calls in
+`packages/api/src/llm/parse-*.ts`.
 
 ### Why these are separate from the extraction prompt
 

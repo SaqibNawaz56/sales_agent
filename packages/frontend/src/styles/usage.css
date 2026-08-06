@@ -1,0 +1,88 @@
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/*
+ * The two Groq budgets, stacked.
+ *
+ * Sized to be glanceable and ignorable: a shopkeeper logging a sale should not
+ * be reading a dashboard, but when the tier is nearly spent that is the one
+ * explanation for the agent stalling, and hunting for it in a container log
+ * during a demo is the wrong time to learn it.
+ */
+.usage {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--muted);
+}
+
+.usage-row {
+  display: grid;
+  /* Fixed columns so the two bars line up under each other regardless of how
+     wide the numbers happen to be — a jittering meter reads as instability. */
+  grid-template-columns: 22px 46px 60px;
+  align-items: center;
+  gap: 6px;
+  cursor: help;
+}
+
+.usage-label {
+  color: var(--muted);
+  opacity: 0.75;
+}
+
+.usage-bar {
+  display: block;
+  width: 46px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+/* Fills as the budget is consumed. */
+.usage-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--confirm);
+  transition: width 400ms ease;
+}
+
+.usage-text {
+  text-align: right;
+}
+
+.usage-row.warn .usage-fill {
+  background: #b8860b;
+}
+
+.usage-row.warn .usage-text {
+  color: #8a6508;
+}
+
+.usage-row.critical .usage-fill {
+  background: var(--danger);
+}
+
+.usage-row.critical .usage-text {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.usage.idle {
+  opacity: 0.55;
+  cursor: help;
+}
+
+/* The header aligns on the baseline for the title and session id; the meter is
+   a two-row block and needs centring against them instead. */
+.header {
+  align-items: center;
+}

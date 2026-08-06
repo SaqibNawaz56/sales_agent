@@ -6,9 +6,9 @@
  * a loop that asks twice would satisfy a lazier assertion while failing the
  * actual criterion, so the questions are counted.
  */
-import { handleMessage } from "../controller.js";
-import { callServerTool, closeMcpClient } from "../mcp.js";
-import { resetSessions } from "../session.js";
+import { handleMessage } from "../sales";
+import { callServerTool, closeMcpClient } from "../mcp";
+import { resetSessions } from "../session";
 
 const PACING_MS = 4_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

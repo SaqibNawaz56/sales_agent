@@ -114,7 +114,7 @@ if ($controller -match "rate_limit_exceeded") {
 Write-Host "`n6. The same flow driven through the CLI" -ForegroundColor Cyan
 docker compose exec -T db psql -U shop -d sales_agent -c "DELETE FROM sales; DELETE FROM customers;" | Out-Null
 $cliInput = "2kg rice, 2kg sugar and oil to Ali`n2 litres`nyes`n/quit"
-$cli = ($cliInput | docker compose exec -T -w /app/packages/api api npx tsx src/cli.ts 2>&1) | Out-String
+$cli = ($cliInput | docker compose exec -T -w /app/packages/api api npx tsx src/cli/main.ts 2>&1) | Out-String
 
 if ($cli -match "rate_limit_exceeded") {
     Write-Host "  WARN  Groq rate limit hit - inconclusive. Wait a minute and re-run." -ForegroundColor Yellow

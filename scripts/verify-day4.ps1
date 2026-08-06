@@ -52,7 +52,7 @@ function Scalar($sql) {
 # the built-in alias for Clear-Item. A function by that name is silently never
 # called.
 function RunCli($lines) {
-    $output = ($lines | docker compose exec -T -w /app/packages/api api npx tsx src/cli.ts 2>&1) | Out-String
+    $output = ($lines | docker compose exec -T -w /app/packages/api api npx tsx src/cli/main.ts 2>&1) | Out-String
     if ($output -notmatch "Sales agent") {
         # Without this guard, every "nothing was written" assertion below would
         # pass simply because the CLI never ran.

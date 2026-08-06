@@ -57,22 +57,24 @@ services:
     volumes:
       - ./packages/api/src:/app/packages/api/src
 
-  web:
+  frontend:
     build:
       context: .
-      dockerfile: packages/web/Dockerfile
+      dockerfile: packages/frontend/Dockerfile
     restart: unless-stopped
     environment:
       # Vite proxies /api across the compose network, so the browser only ever
       # talks to this origin and there is no CORS to configure.
       API_URL: http://api:3000
     ports:
+      # WEB_PORT keeps its name so an existing .env keeps working; it is an
+      # environment variable, not a path.
       - "${WEB_PORT:-5173}:5173"
     depends_on:
       - api
     volumes:
-      - ./packages/web/src:/app/packages/web/src
-      - ./packages/web/index.html:/app/packages/web/index.html
+      - ./packages/frontend/src:/app/packages/frontend/src
+      - ./packages/frontend/index.html:/app/packages/frontend/index.html
 
 volumes:
   pgdata:

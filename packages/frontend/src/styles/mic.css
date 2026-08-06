@@ -1,0 +1,87 @@
+/*
+ * The dictation button, sitting between the input and Send.
+ *
+ * Every rule is scoped `.composer .mic` rather than plain `.mic`, and that is
+ * not decoration. composer.css styles `.composer button` — one class plus one
+ * element, specificity (0,1,1) — which outranks a bare `.mic` at (0,1,0). A
+ * plain `.mic` therefore loses its padding and background to the Send button's,
+ * and renders as a blue box with the icon crushed out of sight. Scoping to
+ * (0,2,0) wins cleanly without resorting to !important.
+ *
+ * Deliberately quiet when idle: dictation is an alternative to typing, not the
+ * primary action, and the only button on this screen that should shout is the
+ * one that saves a sale.
+ */
+.composer .mic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 44px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.composer .mic:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--owner);
+}
+
+.composer .mic:focus-visible {
+  outline: 2px solid var(--owner);
+  outline-offset: 2px;
+}
+
+.composer .mic:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* While recording the button is the live indicator. Unlike the Web Speech
+   version this shows no interim words — Whisper transcribes the whole
+   utterance at the end — so the pulse is the only signal that it is still
+   capturing, which makes it load-bearing rather than decorative. */
+.composer .mic.recording {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+  animation: mic-pulse 1.4s ease-in-out infinite;
+}
+
+/* Waiting on the server. Disabled, so a second press cannot start a new
+   recording on top of one still being transcribed. */
+.composer .mic.transcribing {
+  background: #fff;
+  border-color: var(--line);
+  color: var(--owner);
+}
+
+@keyframes mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(180 35 44 / 45%);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgb(180 35 44 / 0%);
+  }
+}
+
+/* Respect a stated preference for less motion; the colour change alone still
+   distinguishes listening from idle. */
+@media (prefers-reduced-motion: reduce) {
+  .composer .mic.recording {
+    animation: none;
+  }
+}
+
+/* Sits above the composer rather than inside it, so the composer row keeps the
+   exact layout it had before dictation existed. */
+.mic-note {
+  padding: 8px 18px 0;
+  color: var(--danger);
+  font-size: 13px;
+}

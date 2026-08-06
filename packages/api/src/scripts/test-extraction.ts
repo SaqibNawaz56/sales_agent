@@ -6,7 +6,7 @@
  * re-run against all of them, because fixing one sentence by rewording the
  * prompt routinely breaks another.
  */
-import { extractSale, type ExtractedSale } from "../extract.js";
+import { extractSale, type ExtractedSale } from "../llm";
 
 interface Case {
   name: string;

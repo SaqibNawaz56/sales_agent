@@ -11,14 +11,14 @@ import {
   lineTotal,
   newItem,
   type DraftItem,
-} from "../draft.js";
+} from "../draft";
 import {
   clearDraft,
   getDraft,
   resetSessions,
   sessionCount,
   setDraft,
-} from "../session.js";
+} from "../session";
 
 let failures = 0;
 

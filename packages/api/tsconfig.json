@@ -1,9 +1,17 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    // CommonJS, not NodeNext: Nest's DI reads type metadata that
+    // `emitDecoratorMetadata` writes, and that toolchain is only well-trodden
+    // on CJS. Every LangChain dependency here publishes a `require` condition
+    // (dist/index.cjs), so nothing is lost by leaving ESM behind.
+    "module": "commonjs",
+    "moduleResolution": "node",
     "lib": ["ES2023"],
+    // Both are mandatory for Nest. Without emitDecoratorMetadata, constructor
+    // parameter types are erased and every provider fails to resolve at boot.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,

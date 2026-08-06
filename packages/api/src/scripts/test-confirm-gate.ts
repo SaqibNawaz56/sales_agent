@@ -5,9 +5,9 @@
  * a rejected one writes nothing. Row-level verification is done by
  * verify-day4.ps1 through psql — this package has no database access by design.
  */
-import { cancelSale, confirmSale, handleMessage } from "../controller.js";
-import { callServerTool, closeMcpClient, loadAgentTools } from "../mcp.js";
-import { getDraft, resetSessions } from "../session.js";
+import { cancelSale, confirmSale, handleMessage } from "../sales";
+import { callServerTool, closeMcpClient, loadAgentTools } from "../mcp";
+import { getDraft, resetSessions } from "../session";
 
 const PACING_MS = 4_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

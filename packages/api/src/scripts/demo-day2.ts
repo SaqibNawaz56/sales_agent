@@ -12,8 +12,8 @@
  *      fetched by application code through MCP tools the model was never told
  *      about. This is why a hallucinated price cannot reach the books (R3).
  */
-import { extractSale } from "../extract.js";
-import { callServerTool, closeMcpClient, loadAgentTools } from "../mcp.js";
+import { extractSale } from "../llm";
+import { callServerTool, closeMcpClient, loadAgentTools } from "../mcp";
 
 const SENTENCE = process.argv[2] ?? "2kg rice and 2kg sugar to Ali";
 

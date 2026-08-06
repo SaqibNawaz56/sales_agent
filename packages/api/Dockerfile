@@ -16,4 +16,7 @@ COPY packages/api ./packages/api
 
 EXPOSE 3000
 
+# tsx watch src/main.ts — the Nest bootstrap. Nest's own CLI is deliberately
+# not used: it would add a second build toolchain (webpack) alongside the tsx
+# setup the other services already share.
 CMD ["npm", "run", "dev", "--workspace", "packages/api"]

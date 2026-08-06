@@ -1,0 +1,12 @@
+.transcript {
+  flex: 1;
+  /* A flex item defaults to min-height:auto and so refuses to shrink below its
+     content. Without this the transcript pushes the composer — and the bottom
+     of a tall confirmation card — past the fold instead of scrolling. */
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

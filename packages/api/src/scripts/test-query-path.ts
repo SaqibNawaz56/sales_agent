@@ -7,14 +7,14 @@
  *
  * Fixtures are created through MCP tools. verify-day5.ps1 clears them with psql.
  */
-import { callServerTool, closeMcpClient } from "../mcp.js";
+import { callServerTool, closeMcpClient } from "../mcp";
 import {
   buildPseudonymMap,
   containsRealName,
   detokenise,
   tokenise,
-} from "../pseudonym.js";
-import { answerQuery } from "../query.js";
+} from "../reporting";
+import { answerQuery } from "../reporting";
 
 const PACING_MS = 4_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

@@ -1,0 +1,58 @@
+/*
+ * The buttons that answer a clarification question.
+ *
+ * Aligned to the right, with the owner's bubbles, because pressing one is his
+ * turn in the conversation rather than part of what the assistant said.
+ *
+ * flex-shrink: 0 for the same reason .card carries it — this is a flex item in
+ * a column flex container, and a wrapped row of buttons must not be compressed
+ * out of reach when the transcript is full.
+ */
+.choices {
+  align-self: flex-end;
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 85%;
+}
+
+.choice {
+  padding: 9px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choice:hover:not(:disabled) {
+  border-color: var(--owner);
+}
+
+.choice:focus-visible {
+  outline: 2px solid var(--owner);
+  outline-offset: 2px;
+}
+
+/* The affirmative option is the one that writes to the database — adding a
+   customer, or opening the flow that adds a product. It is weighted, but not
+   so much that pressing it feels like the only way forward. */
+.choice.affirm {
+  background: var(--confirm);
+  border-color: var(--confirm);
+  color: #fff;
+}
+
+.choice.reject {
+  color: var(--muted);
+}
+
+.choice:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

@@ -8,9 +8,9 @@
  * Requires "ghee" and "masala" to be absent from the catalogue. verify-day4.ps1
  * clears them first; run those deletes yourself if invoking this directly.
  */
-import { handleMessage } from "../controller.js";
-import { callServerTool, closeMcpClient } from "../mcp.js";
-import { resetSessions } from "../session.js";
+import { handleMessage } from "../sales";
+import { callServerTool, closeMcpClient } from "../mcp";
+import { resetSessions } from "../session";
 
 const PACING_MS = 4_000;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

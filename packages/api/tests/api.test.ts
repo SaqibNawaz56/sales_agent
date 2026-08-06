@@ -7,12 +7,22 @@
  *
  * Run:  docker compose exec -w /app/packages/api api npm test
  */
+import "reflect-metadata";
+
+import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
-import { createApp } from "../src/app.js";
-import { callServerTool, closeMcpClient } from "../src/mcp.js";
+import { createApp } from "../src/main";
+import { callServerTool, closeMcpClient } from "../src/mcp";
 
-const app = createApp();
+/**
+ * Built in beforeAll rather than at module scope: NestFactory.create is async,
+ * so there is no synchronous equivalent of the old `const app = createApp()`.
+ * `app.init()` wires the container without binding a port — Supertest drives
+ * `getHttpServer()` in-process, exactly as before.
+ */
+let nest: INestApplication;
+let app: ReturnType<INestApplication["getHttpServer"]>;
 
 /** A product name that cannot already be in the catalogue. */
 const NEW_PRODUCT = `Spice${Date.now()}`;
@@ -31,6 +41,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const PACE = 3_000;
 
 beforeAll(async () => {
+  nest = await createApp();
+  await nest.init();
+  app = nest.getHttpServer();
+
   await callServerTool("find_or_create_customer", {
     name: "Ali",
     createIfMissing: true,
@@ -38,6 +52,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await nest.close();
   await closeMcpClient();
 });
 

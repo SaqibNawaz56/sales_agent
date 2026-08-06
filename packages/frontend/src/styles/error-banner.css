@@ -1,0 +1,8 @@
+.error {
+  align-self: stretch;
+  padding: 10px 13px;
+  border: 1px solid #f0c4c7;
+  background: #fdf1f2;
+  color: var(--danger);
+  border-radius: 10px;
+}

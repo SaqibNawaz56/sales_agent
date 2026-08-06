@@ -1,0 +1,17 @@
+{
+  // The root tsconfig has rootDir "src" and emits to dist, so tests cannot be
+  // added to its `include` without changing the shape of the build output.
+  // A separate no-emit project gives the editor and ts-jest the Jest globals
+  // while leaving `npm run build` producing dist/main.js exactly as before.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    // "multer" is listed because naming anything in this array opts out of
+    // automatic @types discovery, and this project compiles ../src too — where
+    // the transcribe controller refers to Express.Multer.File. The root
+    // tsconfig has no `types` key, so it finds the package on its own.
+    "types": ["jest", "node", "multer"]
+  },
+  "include": ["**/*.ts", "../src/**/*.ts"]
+}

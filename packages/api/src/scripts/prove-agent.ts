@@ -8,8 +8,8 @@
  */
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
-import { runTurn } from "../agent.js";
-import { closeMcpClient, loadAgentTools, loadAllTools } from "../mcp.js";
+import { runTurn } from "../llm";
+import { closeMcpClient, loadAgentTools, loadAllTools } from "../mcp";
 
 async function main(): Promise<void> {
   const everything = await loadAllTools();

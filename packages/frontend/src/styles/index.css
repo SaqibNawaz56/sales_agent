@@ -1,0 +1,22 @@
+/*
+ * One import per component, in the same order the single stylesheet used to
+ * declare them. Plain global CSS, deliberately not CSS Modules: the class names
+ * are the contract between these files and the markup, and renaming them to
+ * hashes would have been a visual change dressed up as a refactor.
+ *
+ * Order is preserved rather than relied upon — no selector here is overridden
+ * by a later file — but keeping it means the cascade is provably unchanged.
+ */
+@import "./tokens.css";
+@import "./base.css";
+@import "./app-shell.css";
+@import "./header.css";
+@import "./usage.css";
+@import "./transcript.css";
+@import "./message-bubble.css";
+@import "./answer-choices.css";
+@import "./error-banner.css";
+@import "./confirmation-card.css";
+@import "./confirm-gate.css";
+@import "./composer.css";
+@import "./mic.css";

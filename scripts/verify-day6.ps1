@@ -60,7 +60,7 @@ $null = docker info 2>$null
 if ($LASTEXITCODE -ne 0) { Abort "Docker daemon is not reachable. Start Docker Desktop." }
 
 $ps = (docker compose ps --format "{{.Service}}|{{.State}}") | Out-String
-foreach ($svc in @("db", "mcp-server", "api", "web")) {
+foreach ($svc in @("db", "mcp-server", "api", "frontend")) {
     if (-not ($ps -match "(?m)^$([regex]::Escape($svc))\|running")) { Abort "$svc is not running." }
 }
 Write-Host "  ok    all four services running" -ForegroundColor DarkGray
@@ -78,7 +78,7 @@ Check "loads the app entry point" ($page.Content -match "main\.tsx")
 
 # --- 2. It compiles -------------------------------------------------------
 Write-Host "`n2. TypeScript compiles and the app builds" -ForegroundColor Cyan
-$build = (docker compose exec -T -w /app/packages/web web npm run build 2>&1) | Out-String
+$build = (docker compose exec -T -w /app/packages/frontend frontend npm run build 2>&1) | Out-String
 Check "tsc --noEmit and vite build both succeed" ($build -match "built in")
 Check "emits a JS bundle" ($build -match "assets/index-.*\.js")
 Check "emits a stylesheet" ($build -match "assets/index-.*\.css")
@@ -120,15 +120,21 @@ Check "and writes nothing" ((Scalar "SELECT count(*) FROM sales;") -eq $before) 
 
 # --- 6. The client's reach is limited -------------------------------------
 Write-Host "`n6. What the client is able to call" -ForegroundColor Cyan
-$clientSource = Get-Content "packages/web/src/api.ts" -Raw
+# The API client is a directory now: one file per call, plus the shared fetch
+# helper. Concatenating it keeps this check asking the same question — what is
+# the complete set of endpoints this client can reach?
+$clientSource = (Get-ChildItem "packages/frontend/src/api" -File | Get-Content -Raw) -join "`n"
 $endpoints = [regex]::Matches($clientSource, '"(/api/[a-z/]+)"') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
 Check "the client calls exactly two endpoints" ($endpoints.Count -eq 2) ($endpoints -join ", ")
 Check "and one of them is the chat endpoint" ($endpoints -contains "/api/chat")
 Check "and the other is the confirm endpoint" ($endpoints -contains "/api/sales/confirm")
 
-$webSource = (Get-ChildItem "packages/web/src" -Recurse -File | Get-Content -Raw) -join "`n"
+$webSource = (Get-ChildItem "packages/frontend/src" -Recurse -File | Get-Content -Raw) -join "`n"
 Check "the browser bundle never mentions save_sale" ($webSource -notmatch "save_sale")
-Check "the card does not recompute the total itself" ((Get-Content "packages/web/src/ConfirmationCard.tsx" -Raw) -notmatch "reduce\(")
+# The card is now the shell and ItemsTable the rows; neither may do arithmetic.
+$cardSource = (Get-Content "packages/frontend/src/components/ConfirmationCard.tsx" -Raw) +
+              (Get-Content "packages/frontend/src/components/ItemsTable.tsx" -Raw)
+Check "the card does not recompute the total itself" ($cardSource -notmatch "reduce\(")
 
 # --- 7. Regression --------------------------------------------------------
 Write-Host "`n7. Regression: the tool boundary is unchanged" -ForegroundColor Cyan
