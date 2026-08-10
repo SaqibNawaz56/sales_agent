@@ -5,7 +5,9 @@
  * Groq is inspected, and must contain no real customer name. Everything else
  * here is in service of that being a meaningful claim rather than a hopeful one.
  *
- * Fixtures are created through MCP tools. verify-day5.ps1 clears them with psql.
+ * Fixtures are created through MCP tools; clear them with psql afterwards.
+ * tests/unit/reporting.test.ts makes the same assertion against a stubbed
+ * server, so criterion 15 is checked on every run rather than only here.
  */
 import { callServerTool, closeMcpClient } from "../mcp";
 import {

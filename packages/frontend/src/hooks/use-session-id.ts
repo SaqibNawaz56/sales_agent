@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const STORAGE_KEY = "sales-agent-session";
+const STORAGE_KEY = "hisaab-session";
 
 /**
  * The session id is generated once and kept in localStorage, so a refresh does

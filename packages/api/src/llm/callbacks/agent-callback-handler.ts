@@ -18,7 +18,7 @@ import type { Serialized } from "@langchain/core/load/serializable";
  * conversation is approaching that.
  */
 export class AgentCallbackHandler extends BaseCallbackHandler {
-  name = "sales-agent-callbacks";
+  name = "hisaab-callbacks";
 
   private started = new Map<string, number>();
 

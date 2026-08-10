@@ -1,5 +1,5 @@
 {
-  "name": "@sales-agent/api",
+  "name": "@hisaab/api",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,11 @@
     "start": "node dist/main.js",
     "prove-agent": "tsx src/scripts/prove-agent.ts",
     "cli": "tsx src/cli/main.ts",
-    "test": "jest"
+    "typecheck": "tsc --noEmit -p tests/tsconfig.json",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:integration": "jest --config jest.integration.config.js"
   },
   "devDependencies": {
     "@nestjs/testing": "^11.1.28",
@@ -16,6 +20,7 @@
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.2.0",
     "@types/node": "^24.13.3",
+    "@types/pdfkit": "^0.13.9",
     "@types/supertest": "^7.2.1",
     "jest": "^30.4.2",
     "supertest": "^7.2.2",
@@ -30,6 +35,7 @@
     "@nestjs/common": "^11.1.28",
     "@nestjs/core": "^11.1.28",
     "@nestjs/platform-express": "^11.1.28",
+    "pdfkit": "^0.15.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "zod": "^3.25.76"

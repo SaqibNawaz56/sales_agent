@@ -1,0 +1,333 @@
+jest.mock("../../src/mcp", () => ({ callServerTool: jest.fn() }));
+jest.mock("../../src/llm", () => ({ routeQuestion: jest.fn() }));
+
+import { routeQuestion } from "../../src/llm";
+import { callServerTool } from "../../src/mcp";
+import { answerQuery, plural } from "../../src/reporting";
+import { containsRealName } from "../../src/reporting/pseudonym";
+
+const call = callServerTool as jest.MockedFunction<typeof callServerTool>;
+const route = routeQuestion as jest.MockedFunction<typeof routeQuestion>;
+
+const CUSTOMERS = [
+  { id: 1, name: "Ali" },
+  { id: 2, name: "Bilal" },
+];
+
+/** Answers list_customers, then delegates the query tool to `handler`. */
+function stubServer(handler: (tool: string, args: unknown) => unknown): void {
+  call.mockImplementation(async (tool, args) => {
+    if (tool === "list_customers") return { customers: CUSTOMERS } as never;
+    return handler(tool, args) as never;
+  });
+}
+
+/**
+ * The read path.
+ *
+ * Two properties are under test and they are not the same. One is that the
+ * right sentence comes out. The other — the reason this path exists in this
+ * shape — is that no name and no figure is ever handed to Groq.
+ */
+
+describe("the privacy boundary", () => {
+  it("tokenises the question before the model is called", async () => {
+    stubServer(() => ({ found: true, customerName: "Ali", sales: 2, total: 900 }));
+    route.mockResolvedValue({
+      tool: "sales_by_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much has Ali bought?");
+
+    const [sentToModel] = route.mock.calls[0];
+    expect(sentToModel).toBe("how much has customer_1 bought?");
+    expect(outcome.outboundToModel).toBe("how much has customer_1 bought?");
+  });
+
+  it("sends no real customer name to the model", async () => {
+    stubServer(() => ({ found: true, customerName: "Ali", sales: 2, total: 900 }));
+    route.mockResolvedValue({
+      tool: "sales_by_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    await answerQuery("did Ali or Bilal buy more?");
+
+    const [sentToModel] = route.mock.calls[0];
+    const map = {
+      toToken: new Map(CUSTOMERS.map((c) => [c.name, `customer_${c.id}`])),
+      toReal: new Map(CUSTOMERS.map((c) => [`customer_${c.id}`, c.name])),
+    };
+    expect(containsRealName(sentToModel, map)).toBe(false);
+  });
+
+  it("builds the dictionary before it calls the model", async () => {
+    stubServer(() => ({ date: "2026-08-10", sales: 0, total: 0 }));
+    route.mockResolvedValue({
+      tool: "daily_total",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    await answerQuery("what did I sell today?");
+
+    // Ordering is the guarantee: a map built afterwards could not have
+    // scrubbed the question that was already sent.
+    expect(call).toHaveBeenCalledWith("list_customers", {});
+    expect(call.mock.invocationCallOrder[0]).toBeLessThan(
+      route.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("never sends a figure to the model to be phrased", async () => {
+    stubServer(() => ({ date: "2026-08-10", sales: 3, total: 2400 }));
+    route.mockResolvedValue({
+      tool: "daily_total",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did I sell today?");
+
+    // The model was called exactly once, with the question, before any figure
+    // existed. The sentence is assembled from tool results by code.
+    expect(route).toHaveBeenCalledTimes(1);
+    expect(outcome.answer).toContain("2400");
+  });
+});
+
+describe("daily_total", () => {
+  it("reports the day's takings", async () => {
+    stubServer(() => ({ date: "2026-08-10", sales: 3, total: 2400 }));
+    route.mockResolvedValue({
+      tool: "daily_total",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did I sell today?");
+
+    expect(outcome.answer).toBe("On 2026-08-10 you made 3 sales totalling 2400.");
+  });
+
+  it("says so when there were none", async () => {
+    stubServer(() => ({ date: "2026-08-09", sales: 0, total: 0 }));
+    route.mockResolvedValue({
+      tool: "daily_total",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did I sell yesterday?");
+
+    expect(outcome.answer).toBe("No sales recorded on 2026-08-09.");
+  });
+
+  it("passes a named date through to the tool", async () => {
+    stubServer(() => ({ date: "2026-08-01", sales: 1, total: 300 }));
+    route.mockResolvedValue({
+      tool: "daily_total",
+      customer: null,
+      product: null,
+      date: "2026-08-01",
+    });
+
+    await answerQuery("what did I sell on the first?");
+
+    expect(call).toHaveBeenCalledWith("query_daily_total", {
+      date: "2026-08-01",
+    });
+  });
+
+  it("omits the date entirely when none was named", async () => {
+    stubServer(() => ({ date: "2026-08-10", sales: 1, total: 300 }));
+    route.mockResolvedValue({
+      tool: "daily_total",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    await answerQuery("what did I sell today?");
+
+    expect(call).toHaveBeenCalledWith("query_daily_total", {});
+  });
+});
+
+describe("sales_by_customer", () => {
+  it("resolves the token locally, then asks the database by real name", async () => {
+    stubServer(() => ({
+      found: true,
+      customerName: "Ali",
+      sales: 2,
+      total: 900,
+    }));
+    route.mockResolvedValue({
+      tool: "sales_by_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much has Ali bought?");
+
+    expect(call).toHaveBeenCalledWith("query_sales_by_customer", {
+      customerName: "Ali",
+    });
+    expect(outcome.answer).toBe("Ali has made 2 purchases totalling 900.");
+  });
+
+  it("rejects a token the system never issued", async () => {
+    stubServer(() => ({ found: false }));
+    route.mockResolvedValue({
+      tool: "sales_by_customer",
+      customer: "customer_99",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much has Zain bought?");
+
+    expect(outcome.answer).toBe("I don't have that customer on file.");
+    expect(call).not.toHaveBeenCalledWith(
+      "query_sales_by_customer",
+      expect.anything(),
+    );
+  });
+
+  it("asks which customer when the model named none", async () => {
+    stubServer(() => ({ found: false }));
+    route.mockResolvedValue({
+      tool: "sales_by_customer",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much have they bought?");
+
+    expect(outcome.answer).toBe("Which customer did you mean?");
+  });
+
+  it("reports a customer on file with nothing recorded", async () => {
+    stubServer(() => ({ found: true, customerName: "Ali", sales: 0, total: 0 }));
+    route.mockResolvedValue({
+      tool: "sales_by_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much has Ali bought?");
+
+    expect(outcome.answer).toBe("I have no sales recorded for Ali.");
+  });
+});
+
+describe("sales_by_product", () => {
+  it("reports quantity and revenue", async () => {
+    stubServer(() => ({
+      found: true,
+      productName: "Rice",
+      quantity: 12,
+      unit: "kg",
+      revenue: 3600,
+    }));
+    route.mockResolvedValue({
+      tool: "sales_by_product",
+      customer: null,
+      product: "rice",
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much rice have I sold?");
+
+    expect(outcome.answer).toBe("You've sold 12 kg of Rice, for 3600.");
+  });
+
+  it("says when the product is not stocked", async () => {
+    stubServer(() => ({ found: false }));
+    route.mockResolvedValue({
+      tool: "sales_by_product",
+      customer: null,
+      product: "caviar",
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much caviar have I sold?");
+
+    expect(outcome.answer).toBe("caviar isn't in your catalogue.");
+  });
+
+  it("says when it is stocked but has never sold", async () => {
+    stubServer(() => ({
+      found: true,
+      productName: "Flour",
+      quantity: 0,
+      unit: "kg",
+      revenue: 0,
+    }));
+    route.mockResolvedValue({
+      tool: "sales_by_product",
+      customer: null,
+      product: "flour",
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much flour have I sold?");
+
+    expect(outcome.answer).toBe("You haven't sold any Flour yet.");
+  });
+
+  it("asks which product when the model named none", async () => {
+    stubServer(() => ({ found: false }));
+    route.mockResolvedValue({
+      tool: "sales_by_product",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("how much of it have I sold?");
+
+    expect(outcome.answer).toBe("Which product did you mean?");
+  });
+});
+
+describe("questions this system cannot answer", () => {
+  it("says what it can do rather than guessing", async () => {
+    stubServer(() => ({}));
+    route.mockResolvedValue({
+      tool: "none",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what's the weather?");
+
+    expect(outcome.answer).toContain("I can answer three things");
+    // No query tool was reached.
+    expect(call).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("plural", () => {
+  it("does not pluralise one", () => {
+    expect(plural(1, "sale")).toBe("1 sale");
+  });
+
+  it("pluralises everything else, including zero", () => {
+    expect(plural(0, "sale")).toBe("0 sales");
+    expect(plural(3, "purchase")).toBe("3 purchases");
+  });
+});

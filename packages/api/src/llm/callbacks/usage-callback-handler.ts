@@ -16,7 +16,7 @@ import { recordCall } from "../../usage";
  * unless AGENT_TRACE=1. This one must always run.
  */
 export class UsageCallbackHandler extends BaseCallbackHandler {
-  name = "sales-agent-usage";
+  name = "hisaab-usage";
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handleLLMEnd(output: any): void {

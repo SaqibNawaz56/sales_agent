@@ -1,12 +1,15 @@
 {
-  "name": "sales-agent",
+  "name": "hisaab",
   "private": true,
   "version": "0.1.0",
-  "description": "Conversational sales-logging agent for small shop owners",
+  "description": "Hisaab — conversational sales logging for small shop owners",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "test:integration": "npm run test:integration --workspace @hisaab/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "up": "docker compose up --build",
     "down": "docker compose down",
     "db:migrate": "docker compose run --rm mcp-server npx prisma migrate dev",

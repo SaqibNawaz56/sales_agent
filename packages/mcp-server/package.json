@@ -1,5 +1,5 @@
 {
-  "name": "@sales-agent/mcp-server",
+  "name": "@hisaab/mcp-server",
   "version": "0.1.0",
   "private": true,
   "type": "module",

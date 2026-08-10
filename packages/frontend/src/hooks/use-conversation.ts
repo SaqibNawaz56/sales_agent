@@ -7,6 +7,7 @@ import {
   type ChatResponse,
   type DraftSale,
   type PendingQuestion,
+  type ReceiptRef,
 } from "../api";
 import { GREETING, SALE_READY } from "../constants/copy";
 import type { Message } from "../types/message";
@@ -18,6 +19,8 @@ export interface Conversation {
   awaiting: boolean;
   busy: boolean;
   error: string | null;
+  /** The receipt for the last sale saved, until the next one begins. */
+  receipt: ReceiptRef | null;
   send: (text: string) => Promise<void>;
   choose: (choiceId: string) => Promise<void>;
   resolve: (confirmed: boolean) => Promise<void>;
@@ -45,6 +48,7 @@ export function useConversation(sessionId: string): Conversation {
   const [draft, setDraft] = useState<DraftSale | null>(null);
   const [question, setQuestion] = useState<PendingQuestion | null>(null);
   const [awaiting, setAwaiting] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptRef | null>(null);
 
   const nextId = useRef(1);
 
@@ -69,6 +73,9 @@ export function useConversation(sessionId: string): Conversation {
       append("owner", text);
       setBusy(true);
       setError(null);
+      // The previous sale's receipt belongs to the previous sale. Leaving it up
+      // while a new one is being assembled invites downloading the wrong one.
+      setReceipt(null);
 
       try {
         const response = await sendMessage(sessionId, text);
@@ -126,6 +133,8 @@ export function useConversation(sessionId: string): Conversation {
       try {
         const response = await resolveSale(sessionId, confirmed);
         absorb(response);
+        // Null on a cancellation, which is what clears a previous sale's link.
+        setReceipt(response.receipt ?? null);
       } catch (failure) {
         // The card stays on screen so the owner can try again — a failed save
         // must not look like a completed one.
@@ -144,6 +153,7 @@ export function useConversation(sessionId: string): Conversation {
     awaiting,
     busy,
     error,
+    receipt,
     send,
     choose,
     resolve,

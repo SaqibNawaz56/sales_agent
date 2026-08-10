@@ -10,7 +10,7 @@ export function Header({
 }) {
   return (
     <header className="header">
-      <h1>Sales Agent</h1>
+      <h1>Hisaab</h1>
       <div className="header-right">
         <UsageMeter usage={usage} />
         {/* Visible on purpose: the session is the key to a server-side draft,

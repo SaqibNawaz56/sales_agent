@@ -24,6 +24,7 @@ export function App() {
     awaiting,
     busy,
     error,
+    receipt,
     send,
     choose,
     resolve,
@@ -52,6 +53,7 @@ export function App() {
         awaiting={awaiting}
         busy={busy}
         error={error}
+        receipt={receipt}
         onChoose={(choiceId) => void choose(choiceId)}
         onConfirm={confirm}
         onCancel={cancel}

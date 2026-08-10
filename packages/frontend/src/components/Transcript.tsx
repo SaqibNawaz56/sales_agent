@@ -1,11 +1,12 @@
 import type { Ref } from "react";
 
-import type { DraftSale, PendingQuestion } from "../api";
+import type { DraftSale, PendingQuestion, ReceiptRef } from "../api";
 import type { Message } from "../types/message";
 import { AnswerChoices } from "./AnswerChoices";
 import { ConfirmationCard } from "./ConfirmationCard";
 import { ErrorBanner } from "./ErrorBanner";
 import { MessageBubble } from "./MessageBubble";
+import { ReceiptLink } from "./ReceiptLink";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 
 /**
@@ -22,6 +23,7 @@ export function Transcript({
   awaiting,
   busy,
   error,
+  receipt,
   onChoose,
   onConfirm,
   onCancel,
@@ -34,6 +36,7 @@ export function Transcript({
   awaiting: boolean;
   busy: boolean;
   error: string | null;
+  receipt: ReceiptRef | null;
   onChoose: (choiceId: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
@@ -61,6 +64,10 @@ export function Transcript({
           onCancel={onCancel}
         />
       )}
+
+      {/* Sits under the "Saved." message it belongs to, and stays there until
+          the owner starts the next sale. */}
+      {receipt && !busy && <ReceiptLink receipt={receipt} />}
 
       {busy && <ThinkingIndicator />}
 

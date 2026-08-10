@@ -9,7 +9,7 @@ COPY packages/frontend/package.json ./packages/frontend/
 COPY packages/api/package.json ./packages/api/
 COPY packages/mcp-server/package.json ./packages/mcp-server/
 
-RUN npm ci --workspace @sales-agent/frontend --include-workspace-root
+RUN npm ci --workspace @hisaab/frontend --include-workspace-root
 
 COPY packages/frontend ./packages/frontend
 

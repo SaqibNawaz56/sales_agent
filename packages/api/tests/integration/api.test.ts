@@ -12,8 +12,8 @@ import "reflect-metadata";
 import type { INestApplication } from "@nestjs/common";
 import request from "supertest";
 
-import { createApp } from "../src/main";
-import { callServerTool, closeMcpClient } from "../src/mcp";
+import { createApp } from "../../src/main";
+import { callServerTool, closeMcpClient } from "../../src/mcp";
 
 /**
  * Built in beforeAll rather than at module scope: NestFactory.create is async,

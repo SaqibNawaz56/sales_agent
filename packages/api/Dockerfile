@@ -10,7 +10,7 @@ COPY packages/api/package.json ./packages/api/
 COPY packages/mcp-server/package.json ./packages/mcp-server/
 
 # npm ci pins to the lockfile so container and host resolve identical versions.
-RUN npm ci --workspace @sales-agent/api --include-workspace-root
+RUN npm ci --workspace @hisaab/api --include-workspace-root
 
 COPY packages/api ./packages/api
 

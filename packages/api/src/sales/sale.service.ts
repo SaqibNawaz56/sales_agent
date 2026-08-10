@@ -104,11 +104,27 @@ export class SaleService {
       }
 
       this.sessions.clear(sessionId);
+
+      // The receipt number comes back from save_sale rather than being fetched
+      // afterwards: it was assigned inside the write transaction, so this is
+      // the only moment it is known without a second round trip.
+      const receipt =
+        saved.receiptNo !== undefined && saved.receiptDate !== undefined
+          ? {
+              saleId: saved.saleId,
+              receiptNo: saved.receiptNo,
+              receiptDate: saved.receiptDate,
+            }
+          : null;
+
+      const number = receipt ? ` Receipt ${String(receipt.receiptNo).padStart(3, "0")}.` : "";
+
       return {
-        reply: `Saved. Sale #${saved.saleId} — ${saved.totalAmount} to ${saved.customer?.name ?? draft.customerName}.`,
+        reply: `Saved. Sale #${saved.saleId} — ${saved.totalAmount} to ${saved.customer?.name ?? draft.customerName}.${number}`,
         draft: null,
         awaitingConfirmation: false,
         question: null,
+        receipt,
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

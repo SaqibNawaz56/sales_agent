@@ -5,6 +5,7 @@ import { defineTool } from "./tools/define.js";
 import { registerCustomerTools } from "./tools/customers.js";
 import { registerProductTools } from "./tools/products.js";
 import { registerQueryTools } from "./tools/queries.js";
+import { registerReceiptTools } from "./tools/receipts.js";
 import { registerSaleTools } from "./tools/sales.js";
 
 /**
@@ -17,7 +18,7 @@ import { registerSaleTools } from "./tools/sales.js";
  */
 export function buildServer(): McpServer {
   const server = new McpServer({
-    name: "sales-agent-mcp",
+    name: "hisaab-mcp",
     version: "0.1.0",
   });
 
@@ -40,6 +41,7 @@ export function buildServer(): McpServer {
   registerCustomerTools(server);
   registerSaleTools(server);
   registerQueryTools(server);
+  registerReceiptTools(server);
 
   return server;
 }

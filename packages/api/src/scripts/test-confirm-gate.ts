@@ -2,8 +2,12 @@
  * The confirmation gate and the write path.
  *
  * Success criterion 8 in two halves: a confirmed sale is written correctly, and
- * a rejected one writes nothing. Row-level verification is done by
- * verify-day4.ps1 through psql — this package has no database access by design.
+ * a rejected one writes nothing. Row-level verification needs psql — this
+ * package has no database access by design.
+ *
+ * The deterministic half of this is covered without a live stack by
+ * tests/unit/sale.service.test.ts; this script is the version that watches real
+ * rows appear and not appear.
  */
 import { cancelSale, confirmSale, handleMessage } from "../sales";
 import { callServerTool, closeMcpClient, loadAgentTools } from "../mcp";

@@ -15,6 +15,7 @@
 @import "./transcript.css";
 @import "./message-bubble.css";
 @import "./answer-choices.css";
+@import "./receipt-link.css";
 @import "./error-banner.css";
 @import "./confirmation-card.css";
 @import "./confirm-gate.css";

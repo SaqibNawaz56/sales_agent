@@ -1,0 +1,16 @@
+{
+  // The app compiles under Vite with ESNext modules and bundler resolution.
+  // ts-jest runs under CommonJS, so those two settings are overridden here
+  // rather than in the root config, which must keep describing the real build.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noEmit": true,
+    // Naming anything here opts out of automatic @types discovery, so the
+    // list must be complete: jest globals, node for `require`, and jest-dom
+    // for the matchers the setup file registers.
+    "types": ["jest", "node", "@testing-library/jest-dom"]
+  },
+  "include": ["**/*.ts", "**/*.tsx", "../src/**/*.ts", "../src/**/*.tsx"]
+}

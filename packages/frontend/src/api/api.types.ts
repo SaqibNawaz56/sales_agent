@@ -46,10 +46,27 @@ export interface PendingQuestion {
   choices: AnswerChoice[];
 }
 
+/**
+ * Where to get the receipt for a sale that was just written.
+ *
+ * Present only on a confirmation that actually saved something. The `url` is
+ * built by the server, so the browser never has to know how receipt routes are
+ * shaped — it follows a link it was handed, exactly as it echoes back a choice
+ * id it was offered.
+ */
+export interface ReceiptRef {
+  saleId: number;
+  receiptNo: number;
+  /** ISO date, YYYY-MM-DD. */
+  receiptDate: string;
+  url: string;
+}
+
 export interface ChatResponse {
   reply: string;
   draftSale: DraftSale | null;
   question: PendingQuestion | null;
   awaitingConfirmation: boolean;
   saved?: boolean;
+  receipt?: ReceiptRef | null;
 }

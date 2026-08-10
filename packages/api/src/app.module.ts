@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 
 import { ChatController } from "./http/chat.controller";
 import { HealthController } from "./http/health.controller";
+import { ReceiptController } from "./http/receipt.controller";
 import { SalesController } from "./http/sales.controller";
 import { TranscribeController } from "./http/transcribe.controller";
 import { UsageController } from "./http/usage.controller";
@@ -28,6 +29,7 @@ import { SessionStore, sessionStore } from "./session";
     HealthController,
     ChatController,
     SalesController,
+    ReceiptController,
     TranscribeController,
     UsageController,
   ],

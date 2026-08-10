@@ -5,8 +5,11 @@
  * product is written to the catalogue, and the SAME sale resumes with
  * everything else intact.
  *
- * Requires "ghee" and "masala" to be absent from the catalogue. verify-day4.ps1
- * clears them first; run those deletes yourself if invoking this directly.
+ * Requires "ghee" and "masala" to be absent from the catalogue — delete them
+ * with psql before running this directly.
+ *
+ * The sub-loop's own logic is covered without a live stack by
+ * tests/unit/clarification-typed.test.ts.
  */
 import { handleMessage } from "../sales";
 import { callServerTool, closeMcpClient } from "../mcp";

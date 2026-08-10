@@ -64,3 +64,19 @@ export const answerSchema = z
   .strict();
 
 export type AnswerRequest = z.infer<typeof answerSchema>;
+
+/**
+ * A sale id out of the URL.
+ *
+ * Coerced, because a path parameter is always a string. `.int()` after the
+ * coercion is what rejects "1.5" and "abc" — Number("abc") is NaN, which fails
+ * the number check, and Number("") is 0, which fails the positive check.
+ */
+export const saleIdParamSchema = z.object({
+  id: z.coerce
+    .number({ invalid_type_error: "sale id must be a number" })
+    .int("sale id must be a whole number")
+    .positive("sale id must be positive"),
+});
+
+export type SaleIdParam = z.infer<typeof saleIdParamSchema>;

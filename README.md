@@ -1,4 +1,7 @@
-# Conversational Sales-Logging Agent
+# Hisaab
+
+*hisaab* — the accounts; the reckoning. What every shopkeeper keeps, and what
+*hisaab kitaab* means when he says he is doing the books.
 
 A shopkeeper types one plain sentence — *"2kg rice, 2kg sugar and oil to Ali"* —
 and it becomes clean, queryable relational data. No forms, no dropdowns.
@@ -19,6 +22,11 @@ an itemised summary, and writes the sale only after he confirms.
 
 **Query sales.** He asks a plain-language question — *"what did I sell today?"*,
 *"how much has Ali bought?"* — and gets an answer from the same database.
+
+A saved sale also produces a **receipt**: an 80mm-wide PDF carrying the
+customer, the day's receipt number, every line at the price charged, and the
+grand total. `GET /api/sales/:id/receipt` serves it for any sale, not only the
+one just confirmed, so a closed tab does not lose it.
 
 ## The rule the design is built around
 
@@ -75,7 +83,7 @@ docker compose run --rm -w /app/packages/mcp-server mcp-server npx prisma db see
 | Service | URL | Notes |
 |---------|-----|-------|
 | Web UI | http://localhost:5173 | The primary surface |
-| API | http://localhost:3000 | `/api/chat`, `/api/sales/confirm` |
+| API | http://localhost:3000 | `/api/chat`, `/api/sales/confirm`, `/api/sales/:id/receipt` |
 | MCP server | http://localhost:3001/mcp | Streamable HTTP |
 | PostgreSQL | `localhost:5433` | **5433**, not 5432 — a local Postgres usually holds 5432 |
 
@@ -95,26 +103,49 @@ limit visible before it bites.
 
 ## Verifying it
 
-Each day has a script that checks the running containers from the outside, not
-the source. They abort rather than reporting green against a dead stack.
+Two suites, both Jest, split by what they cost to run.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\verify-day1.ps1   # MCP spine
-powershell -ExecutionPolicy Bypass -File scripts\verify-day2.ps1   # tools + extraction
-powershell -ExecutionPolicy Bypass -File scripts\verify-day3.ps1   # checklist + clarification
-powershell -ExecutionPolicy Bypass -File scripts\verify-day4.ps1   # sub-loop + confirm gate
-powershell -ExecutionPolicy Bypass -File scripts\verify-day5.ps1   # queries + HTTP API
-powershell -ExecutionPolicy Bypass -File scripts\verify-day6.ps1   # React UI
-```
-
-Integration tests (Jest + Supertest, against the live stack):
+**The unit suites are the default.** No Docker, no database, no API key, no
+network at all — `src/mcp` and `src/llm` are mocked at the module boundary, so
+what is under test is the part of the system the model is deliberately kept out
+of: the checklist, the question templates, the confirmation gate, the tool
+allowlist, and every component that gates a write.
 
 ```bash
-docker compose exec -w /app/packages/api api npm test
+npm test                     # both packages, ~8s
+npm run test --workspace @hisaab/api
+npm run test --workspace @hisaab/frontend
 ```
 
-They cover the five paths named in the plan: happy path, missing quantity,
-new product, rejected confirmation, and `save_sale` absent from the tool list.
+| Suite | Covers |
+|-------|--------|
+| `packages/api/tests/unit` | draft arithmetic, checklist, questions, clarification (typed and pressed), summary, pseudonymisation, the read path, `advanceDraft`, `SaleService`, the tool allowlist, request schemas, the quota meter |
+| `packages/frontend/tests` | `useConversation`, `useSessionId`, the API layer, and the components that gate a write — `ConfirmationCard`, `ConfirmGate`, `AnswerChoices`, `Composer` |
+
+That `npm test` costs nothing is the point, not a nicety — see the note on
+Groq's daily quota below.
+
+**The integration suite is opt-in**, and runs against the real stack: real MCP
+server, real PostgreSQL, real Groq. A mocked version of these would only prove
+that the mocks agree with each other.
+
+```bash
+docker compose exec -w /app/packages/api api npm run test:integration
+```
+
+It covers the five paths named in the plan: happy path, missing quantity, new
+product, rejected confirmation, and `save_sale` absent from the tool list.
+
+Type checking is separate, because `tsx` transpiles without checking:
+
+```bash
+npm run typecheck --workspace @hisaab/api
+npm run typecheck --workspace @hisaab/frontend
+```
+
+The per-day proof scripts in `packages/*/src/scripts/` are kept as a record of
+how each day was checked while it was being built. They talk to a live stack and
+are not part of either suite.
 
 ---
 
@@ -136,13 +167,16 @@ packages/
       clarification/  applying a reply to the one gap that was asked about
       catalogue/  resolution against the database, via MCP
       reporting/  the read path, including customer pseudonymisation
+      receipt/    the printable model (pure) and the PDF renderer
       llm/        every model call, prompt and output schema — nothing outside
       mcp/        tool access and the agent allowlist
       session/    in-memory draft store
       summary/    the itemised summary shown before a write
       cli/        the terminal client
-      scripts/    per-day proof scripts
-    tests/        Jest integration tests
+      scripts/    per-day proof scripts, against a live stack
+    tests/
+      unit/       the default suite — mocked, no network
+      integration/ the live end-to-end paths, opt-in
 
   frontend/       React + Vite chat UI
     src/
@@ -150,7 +184,7 @@ packages/
       hooks/      conversation state, session id, scroll anchoring
       api/        one file per endpoint; resolve-sale.ts is the only write
       styles/     one stylesheet per component
-scripts/          per-day verification
+    tests/        jsdom + Testing Library
 docs/             agent prompt iteration history
 ```
 
@@ -188,6 +222,14 @@ snapshots whatever the current price is. If the catalogue changes between showin
 the summary and the owner pressing Confirm, that writes a sale he never approved.
 The confirmed price is passed in and the write is refused if it no longer matches.
 
+**The receipt number is stored, not derived.** It would be cheaper to compute
+"the nth sale of that day" on read. But a receipt number that can be recomputed
+differently later — after a sale is voided, say — is not a receipt number. It is
+assigned inside `save_sale`'s transaction, so a sale and its number come into
+existence together, and a unique index on `(receipt_date, receipt_no)` means two
+sales confirmed in the same instant produce a failed write that retries rather
+than a silently shared number.
+
 **Criterion 8 needs one word changed.** "A rejected confirmation leaves the
 database entirely unchanged" is not quite what happens: a product added during
 the new-product sub-loop stays in the catalogue, because adding it was its own
@@ -203,13 +245,13 @@ confirmed action and the shop does now stock it. No *sale* is written.
 - **Groq's free tier has two limits, and the daily one is the dangerous one.**
   12,000 tokens per minute, and **100,000 tokens per day**. An extraction costs
   roughly 800–1,500 tokens, so a single model call is cheap but a full sweep is
-  not: running every verification script plus the Jest suite plus the demo comes
-  to well over 100 calls and will exhaust the *daily* quota in one sitting.
-  The per-minute limit clears in seconds; the daily one does not clear until it
-  resets. **Do not rehearse the demo on the morning of the demo** — verify the
-  day before, then leave the budget alone. The model retries with backoff, and
-  the verification scripts report a rate limit as inconclusive rather than as a
-  failure, but neither helps once the daily quota is gone.
+  not: the integration suite plus the per-day proof scripts plus a demo
+  rehearsal comes to well over 100 calls and will exhaust the *daily* quota in
+  one sitting. The per-minute limit clears in seconds; the daily one does not
+  clear until it resets. **Do not rehearse the demo on the morning of the
+  demo** — run the live suite the day before, then leave the budget alone. This
+  is why the unit suites mock the model rather than calling it: the tests you
+  run on every save must not be the ones that spend the day's allowance.
 - **The capture sentence still transits.** Pseudonymisation covers the query
   path. Scrubbing names from a live capture sentence needs local NER, and a fully
   local model would remove the trust boundary altogether. Both remain roadmap.

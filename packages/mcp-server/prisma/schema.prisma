@@ -44,9 +44,26 @@ model Sale {
   totalAmount Decimal  @map("total_amount") @db.Decimal(12, 2)
   soldAt      DateTime @default(now()) @map("sold_at")
 
+  // What the owner writes on the paper receipt: a counter that restarts at 1
+  // each day, so "receipt 3" means the third sale of that date rather than the
+  // third sale ever. Stored rather than derived — a receipt number that could
+  // be recomputed differently later is not a receipt number.
+  //
+  // The date is a DATE, not a timestamp, and is the UTC day of soldAt. That
+  // matches how query_daily_total buckets a day, so "receipt 3 of 10 August"
+  // and "what did I sell on 10 August" can never disagree about which sales
+  // belong to which day.
+  receiptDate DateTime @map("receipt_date") @db.Date
+  receiptNo   Int      @map("receipt_no")
+
   customer Customer   @relation(fields: [customerId], references: [id])
   items    SaleItem[]
 
+  // The backstop for two sales confirmed in the same instant. save_sale reads
+  // the day's highest number and adds one, which is a read-then-write and can
+  // race; this constraint turns that race into a failed write the owner is told
+  // about rather than two sales silently sharing a receipt number.
+  @@unique([receiptDate, receiptNo])
   @@index([soldAt])
   @@index([customerId])
   @@map("sales")

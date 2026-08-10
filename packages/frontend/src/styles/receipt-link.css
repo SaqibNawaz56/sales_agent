@@ -1,0 +1,39 @@
+/*
+ * The download link for a saved sale.
+ *
+ * Aligned left, with the assistant's bubbles, because it is something the shop
+ * is handing over rather than an action the owner is taking — the sale is
+ * already written by the time this appears.
+ *
+ * Styled as a button but left as an anchor: `download` on a real link is what
+ * makes right-click, middle-click and share behave, and none of those survive a
+ * click handler that fetches a blob.
+ *
+ * flex-shrink: 0 for the same reason .choices and .card carry it — a flex item
+ * in a column container must not be compressed out of reach.
+ */
+.receipt-link {
+  align-self: flex-start;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--confirm);
+  background: #fff;
+  color: var(--confirm);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.receipt-link:hover {
+  background: var(--confirm);
+  color: #fff;
+}
+
+.receipt-link:focus-visible {
+  outline: 2px solid var(--confirm);
+  outline-offset: 2px;
+}
