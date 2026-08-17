@@ -233,6 +233,159 @@ describe("sales_by_customer", () => {
   });
 });
 
+describe("last_sale_for_customer", () => {
+  const lastSale = {
+    found: true,
+    hasSale: true,
+    customerName: "Ali",
+    saleId: 49,
+    receiptNo: 4,
+    date: "2026-08-10",
+    total: 1800,
+    items: [
+      { productName: "Rice", unit: "kg", quantity: 2, unitPrice: 300, lineTotal: 600 },
+      { productName: "Sugar", unit: "kg", quantity: 2, unitPrice: 100, lineTotal: 200 },
+      { productName: "Oil", unit: "litre", quantity: 2, unitPrice: 500, lineTotal: 1000 },
+    ],
+  };
+
+  it("lists what the customer actually bought on their last visit", async () => {
+    // The question this route exists for. Before it, "what did Ali buy last
+    // time?" routed to sales_by_customer and answered with a lifetime total —
+    // true, and a non-answer.
+    stubServer(() => lastSale);
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Ali buy last time?");
+
+    expect(call).toHaveBeenCalledWith("query_last_sale_for_customer", {
+      customerName: "Ali",
+    });
+    expect(outcome.answer).toBe(
+      "Ali's last sale was on 2026-08-10: 2 kg of Rice at 300, 2 kg of Sugar at 100 and 2 litre of Oil at 500. That came to 1800.",
+    );
+  });
+
+  it("sends no real name to the model", async () => {
+    stubServer(() => lastSale);
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    await answerQuery("what did Ali buy last time?");
+
+    expect(route.mock.calls[0][0]).toBe("what did customer_1 buy last time?");
+  });
+
+  it("handles a single-item sale", async () => {
+    stubServer(() => ({
+      ...lastSale,
+      total: 600,
+      items: [lastSale.items[0]],
+    }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Ali buy last time?");
+
+    expect(outcome.answer).toBe(
+      "Ali's last sale was on 2026-08-10: 2 kg of Rice at 300. That came to 600.",
+    );
+  });
+
+  it("drops the trailing zeros on a fractional quantity", async () => {
+    stubServer(() => ({
+      ...lastSale,
+      total: 375,
+      items: [
+        { productName: "Oil", unit: "litre", quantity: 1.5, unitPrice: 250, lineTotal: 375 },
+      ],
+    }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Ali buy last time?");
+
+    expect(outcome.answer).toContain("1.5 litre of Oil");
+  });
+
+  it("distinguishes a customer with no sales from one not on file", async () => {
+    stubServer(() => ({ found: true, hasSale: false, customerName: "Bilal" }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_2",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Bilal buy last time?");
+
+    expect(outcome.answer).toBe("I have no sales recorded for Bilal.");
+  });
+
+  it("reports a customer that is not on file", async () => {
+    stubServer(() => ({ found: false, customerName: "Ali" }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Ali buy last time?");
+
+    expect(outcome.answer).toBe("I don't have Ali on file.");
+  });
+
+  it("rejects a token the system never issued", async () => {
+    stubServer(() => ({ found: false }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_99",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Zain buy last time?");
+
+    expect(outcome.answer).toBe("I don't have that customer on file.");
+    expect(call).not.toHaveBeenCalledWith(
+      "query_last_sale_for_customer",
+      expect.anything(),
+    );
+  });
+
+  it("asks which customer when the model named none", async () => {
+    stubServer(() => ({ found: false }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: null,
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did they buy last time?");
+
+    expect(outcome.answer).toBe("Which customer did you mean?");
+  });
+});
+
 describe("sales_by_product", () => {
   it("reports quantity and revenue", async () => {
     stubServer(() => ({
@@ -315,7 +468,7 @@ describe("questions this system cannot answer", () => {
 
     const outcome = await answerQuery("what's the weather?");
 
-    expect(outcome.answer).toContain("I can answer three things");
+    expect(outcome.answer).toContain("I can answer four things");
     // No query tool was reached.
     expect(call).toHaveBeenCalledTimes(1);
   });

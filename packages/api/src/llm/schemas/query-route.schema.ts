@@ -2,7 +2,13 @@ import { z } from "zod";
 
 export const queryRouteSchema = z.object({
   tool: z
-    .enum(["daily_total", "sales_by_customer", "sales_by_product", "none"])
+    .enum([
+      "daily_total",
+      "sales_by_customer",
+      "last_sale_for_customer",
+      "sales_by_product",
+      "none",
+    ])
     .describe("Which tool answers this question, or none if no tool fits"),
   customer: z
     .string()

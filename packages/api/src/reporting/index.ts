@@ -1,4 +1,5 @@
 export * from "./answer-daily-total";
+export * from "./answer-last-sale";
 export * from "./answer-query";
 export * from "./answer-sales-by-customer";
 export * from "./answer-sales-by-product";

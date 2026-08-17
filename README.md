@@ -21,7 +21,12 @@ catalogue for its price, asks a targeted question about anything missing, shows
 an itemised summary, and writes the sale only after he confirms.
 
 **Query sales.** He asks a plain-language question — *"what did I sell today?"*,
-*"how much has Ali bought?"* — and gets an answer from the same database.
+*"how much has Ali bought?"*, *"what did I sell to Ali last time?"* — and gets an
+answer from the same database.
+
+Coverage is four fixed tools, not generated SQL, and it grows one tool at a
+time. A question none of them reaches gets "I can't answer that" rather than an
+improvisation — so a missing answer is a missing tool, never a phrasing problem.
 
 A saved sale also produces a **receipt**: an 80mm-wide PDF carrying the
 customer, the day's receipt number, every line at the price charged, and the

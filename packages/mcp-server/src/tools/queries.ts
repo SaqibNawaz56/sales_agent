@@ -8,11 +8,15 @@ import { defineTool } from "./define.js";
 /**
  * The fixed, parameterised read tools (F10, R4).
  *
- * Three narrow queries rather than open-ended SQL generation. The model's only
- * job on the read side is choosing which of these to call — it never composes a
- * query, so it cannot produce one that is wrong, slow, or unsafe. Predictability
- * is valued over coverage: a question that maps to none of these gets "I can't
+ * Narrow queries rather than open-ended SQL generation. The model's only job on
+ * the read side is choosing which of these to call — it never composes a query,
+ * so it cannot produce one that is wrong, slow, or unsafe. Predictability is
+ * valued over coverage: a question that maps to none of these gets "I can't
  * answer that", not an improvisation.
+ *
+ * Coverage is therefore something you add on purpose, one tool at a time. A
+ * question this set cannot reach is not a phrasing problem and no amount of
+ * summarising the wrong answer will fix it — the tool has to exist first.
  */
 
 function money(value: { toString(): string } | null): number {
@@ -96,6 +100,67 @@ export function registerQueryTools(server: McpServer): void {
         customerName: customer.name,
         sales: result._count,
         total: money(result._sum.totalAmount),
+      };
+    },
+  );
+
+  defineTool(
+    server,
+    {
+      name: "query_last_sale_for_customer",
+      title: "One customer's most recent sale",
+      description:
+        "Returns the line items of the most recent sale made to a named customer: what they bought, how much of each, and what it came to.",
+      inputSchema: {
+        customerName: z.string().min(1).describe("The customer's name"),
+      },
+    },
+    async (args) => {
+      const { customerName } = z
+        .object({ customerName: z.string().min(1) })
+        .parse(args);
+
+      const customer = await prisma.customer.findUnique({
+        where: { normalizedName: normalize(customerName) },
+      });
+
+      if (!customer) {
+        return { found: false, customerName };
+      }
+
+      const sale = await prisma.sale.findFirst({
+        where: { customerId: customer.id },
+        // Newest first. `id` breaks ties, because two sales in the same
+        // millisecond still have to order deterministically — otherwise "the
+        // last sale" could answer differently on two identical calls.
+        orderBy: [{ soldAt: "desc" }, { id: "desc" }],
+        include: { items: { include: { product: true }, orderBy: { id: "asc" } } },
+      });
+
+      // On file, but has never bought anything. Distinct from "no such
+      // customer", and the caller words them differently.
+      if (!sale) {
+        return { found: true, customerName: customer.name, hasSale: false };
+      }
+
+      return {
+        found: true,
+        hasSale: true,
+        customerName: customer.name,
+        saleId: sale.id,
+        receiptNo: sale.receiptNo,
+        soldAt: sale.soldAt.toISOString(),
+        date: sale.receiptDate.toISOString().slice(0, 10),
+        total: money(sale.totalAmount),
+        items: sale.items.map((item) => ({
+          productName: item.product.name,
+          unit: item.product.unit,
+          quantity: money(item.quantity),
+          // Snapshotted, like every other historical figure here: what this
+          // sale actually charged, not what the catalogue says today (F7).
+          unitPrice: money(item.unitPriceSnapshot),
+          lineTotal: money(item.lineTotal),
+        })),
       };
     },
   );
