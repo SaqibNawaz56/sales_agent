@@ -46,8 +46,15 @@ services:
       dockerfile: packages/api/Dockerfile
     restart: unless-stopped
     environment:
+      # The agent runs on DeepSeek. Required.
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-pro}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      # Dictation only — DeepSeek has no audio endpoint. Optional: without it
+      # the microphone is disabled and everything else still works.
       GROQ_API_KEY: ${GROQ_API_KEY}
-      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      GROQ_TRANSCRIBE_MODEL: ${GROQ_TRANSCRIBE_MODEL:-whisper-large-v3}
+      GROQ_TRANSCRIBE_LANGUAGE: ${GROQ_TRANSCRIBE_LANGUAGE:-en}
       MCP_SERVER_URL: ${MCP_SERVER_URL:-http://mcp-server:3001/mcp}
       API_PORT: 3000
     ports:

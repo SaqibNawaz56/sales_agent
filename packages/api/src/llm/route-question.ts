@@ -1,4 +1,4 @@
-import { createModel } from "./create-model";
+import { createStructuredModel } from "./create-model";
 import { QUERY_ROUTING_PROMPT } from "./prompts";
 import { queryRouteSchema, type QueryRoute } from "./schemas";
 
@@ -14,9 +14,7 @@ import { queryRouteSchema, type QueryRoute } from "./schemas";
 export async function routeQuestion(
   tokenisedQuestion: string,
 ): Promise<QueryRoute> {
-  const model = createModel("route").withStructuredOutput(queryRouteSchema, {
-    name: "query_route",
-  });
+  const model = createStructuredModel(queryRouteSchema, "query_route", "route");
 
   const result = await model.invoke([
     { role: "system", content: QUERY_ROUTING_PROMPT },

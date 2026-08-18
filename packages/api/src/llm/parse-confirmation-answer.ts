@@ -1,4 +1,4 @@
-import { createModel } from "./create-model";
+import { createStructuredModel } from "./create-model";
 import { CONFIRMATION_ANSWER_PROMPT } from "./prompts";
 import {
   confirmationAnswerSchema,
@@ -10,9 +10,10 @@ export async function parseConfirmationAnswer(
   question: string,
   reply: string,
 ): Promise<ConfirmationAnswer> {
-  const model = createModel("answer:confirm").withStructuredOutput(
+  const model = createStructuredModel(
     confirmationAnswerSchema,
-    { name: "confirmation_answer" },
+    "confirmation_answer",
+    "answer:confirm",
   );
 
   const result = await model.invoke([

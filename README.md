@@ -45,7 +45,7 @@ instruction:
 | Layer | Owns |
 |-------|------|
 | **MCP server** | Every tool, and all database access. Nothing else touches PostgreSQL. |
-| **LangChain / ChatGroq** | Language understanding only — what a sentence says, what a reply means. |
+| **LangChain / DeepSeek** | Language understanding only — what a sentence says, what a reply means. |
 | **Controller** | Every decision. The checklist, which question to ask, the confirmation gate, and the write. |
 
 `save_sale` lives on the MCP server like any other tool, but the tool list handed
@@ -58,7 +58,7 @@ only from an explicit confirmation.
 browser / CLI
       |
       v
-  controller  ──── extract / parse ────▶  ChatGroq   (tokens only on the read path)
+  controller  ──── extract / parse ────▶  DeepSeek   (tokens only on the read path)
       |
       | own MCP client
       v
@@ -71,10 +71,12 @@ browser / CLI
 ## Running it
 
 Everything runs in Docker. You need Docker Desktop and a
-[Groq API key](https://console.groq.com/keys).
+[DeepSeek API key](https://platform.deepseek.com/api_keys). A
+[Groq key](https://console.groq.com/keys) is optional and buys dictation only —
+DeepSeek publishes no audio endpoint, so the microphone goes to Whisper.
 
 ```bash
-cp .env.example .env          # then set POSTGRES_PASSWORD and GROQ_API_KEY
+cp .env.example .env          # then set POSTGRES_PASSWORD and DEEPSEEK_API_KEY
 docker compose up -d --build
 ```
 
@@ -101,8 +103,8 @@ docker compose run --rm -it -w /app/packages/api api npm run cli
 `/confirm` saves, `/cancel` discards, `/draft` shows the raw state, `/help`.
 
 To watch the model calls, set `AGENT_TRACE=1` — it prints each prompt, its
-latency and its token cost, which is what makes Groq's 12k-tokens-per-minute
-limit visible before it bites.
+latency and its token cost, which is the only place the real spend is visible
+— DeepSeek sends no rate-limit headers for the meter to read.
 
 ---
 
@@ -128,10 +130,10 @@ npm run test --workspace @hisaab/frontend
 | `packages/frontend/tests` | `useConversation`, `useSessionId`, the API layer, and the components that gate a write — `ConfirmationCard`, `ConfirmGate`, `AnswerChoices`, `Composer` |
 
 That `npm test` costs nothing is the point, not a nicety — see the note on
-Groq's daily quota below.
+model cost below.
 
 **The integration suite is opt-in**, and runs against the real stack: real MCP
-server, real PostgreSQL, real Groq. A mocked version of these would only prove
+server, real PostgreSQL, real DeepSeek. A mocked version of these would only prove
 that the mocks agree with each other.
 
 ```bash
@@ -216,7 +218,7 @@ passes through the model — which makes R3 true by construction rather than by
 instructing the model not to invent prices.
 
 **Pseudonymisation is real on the query path, not deferred** (§5A). The proposal
-defers name-scrubbing to a future NER model and accepts that names reach Groq.
+defers name-scrubbing to a future NER model and accepts that names reach the model.
 They do not: the shop owns its customer list, so that list is the dictionary.
 The owner asks about "Ali"; the model is handed `customer_1` and routes on the
 token. It never sees a figure either — answers are formatted from tool results by
@@ -247,16 +249,18 @@ confirmed action and the shop does now stock it. No *sale* is written.
 - **Drafts are in-memory.** A container restart discards a sale being assembled.
   Fine for a single-operator shop; an unconfirmed draft is not yet a business
   record. Drafts also expire after an hour.
-- **Groq's free tier has two limits, and the daily one is the dangerous one.**
-  12,000 tokens per minute, and **100,000 tokens per day**. An extraction costs
-  roughly 800–1,500 tokens, so a single model call is cheap but a full sweep is
-  not: the integration suite plus the per-day proof scripts plus a demo
-  rehearsal comes to well over 100 calls and will exhaust the *daily* quota in
-  one sitting. The per-minute limit clears in seconds; the daily one does not
-  clear until it resets. **Do not rehearse the demo on the morning of the
-  demo** — run the live suite the day before, then leave the budget alone. This
-  is why the unit suites mock the model rather than calling it: the tests you
-  run on every save must not be the ones that spend the day's allowance.
+- **Model calls cost money, and the quota meter cannot see it.** DeepSeek is
+  pay-as-you-go rather than a capped free tier, so nothing will cut you off
+  mid-demo the way Groq's daily allowance could — but nothing warns you either.
+  The header-based meter in the app reads the `x-ratelimit-*` family, which
+  DeepSeek does not send, so the chat budget shows "quota —" and only the
+  dictation bucket fills. An extraction is roughly 800–1,500 tokens; the
+  integration suite plus the proof scripts is well over 100 calls. The unit
+  suites still mock the model, so the tests you run on every save cost nothing.
+- **A provider can retire a model without warning.** `llama-3.3-70b-versatile`
+  was removed from Groq mid-build and every turn began returning 404 with no
+  local change. That is the reason the model id is an environment variable and
+  not a constant. Run the app once the day before a demo.
 - **The capture sentence still transits.** Pseudonymisation covers the query
   path. Scrubbing names from a live capture sentence needs local NER, and a fully
   local model would remove the trust boundary altogether. Both remain roadmap.

@@ -1,4 +1,4 @@
-import { createModel } from "./create-model";
+import { createStructuredModel } from "./create-model";
 import { QUANTITY_ANSWER_PROMPT } from "./prompts";
 import { quantityAnswerSchema, type QuantityAnswer } from "./schemas";
 
@@ -7,9 +7,10 @@ export async function parseQuantityAnswer(
   question: string,
   reply: string,
 ): Promise<QuantityAnswer> {
-  const model = createModel("answer:quantity").withStructuredOutput(
+  const model = createStructuredModel(
     quantityAnswerSchema,
-    { name: "quantity_answer" },
+    "quantity_answer",
+    "answer:quantity",
   );
 
   const result = await model.invoke([

@@ -1,4 +1,4 @@
-import { createModel } from "./create-model";
+import { createStructuredModel } from "./create-model";
 import { EXTRACTION_SYSTEM_PROMPT } from "./prompts";
 import { extractedSaleSchema, type ExtractedSale } from "./schemas";
 
@@ -10,9 +10,10 @@ import { extractedSaleSchema, type ExtractedSale } from "./schemas";
  * every price is resolved afterwards by the controller.
  */
 export async function extractSale(message: string): Promise<ExtractedSale> {
-  const model = createModel("extract").withStructuredOutput(
+  const model = createStructuredModel(
     extractedSaleSchema,
-    { name: "extracted_sale" },
+    "extracted_sale",
+    "extract",
   );
 
   const result = await model.invoke([

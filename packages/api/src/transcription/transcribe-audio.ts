@@ -29,12 +29,18 @@ interface GroqTranscription {
 /**
  * Sends recorded audio to Groq's Whisper endpoint and returns the text.
  *
- * The audio never touches the model that runs the agent, and the transcript
- * goes back to the browser rather than into a draft — dictation fills the
- * composer, and the owner still presses Send. That keeps the rule this system
- * is built on: nothing enters a sale without a deliberate action.
+ * THE ONLY REMAINING USE OF GROQ. The agent itself runs on DeepSeek now (see
+ * llm/create-model.ts), but DeepSeek publishes no audio endpoint, so dictation
+ * stays here. The two providers are reached with separate keys for separate
+ * jobs: losing the Groq key costs the microphone and nothing else, and the
+ * shop can still be run entirely by typing.
  *
- * The Groq key lives here, in the API, and never in the browser bundle.
+ * That separation is also true of the data. The audio never touches the model
+ * that runs the agent, and the transcript goes back to the browser rather than
+ * into a draft — dictation fills the composer, and the owner still presses
+ * Send. Nothing enters a sale without a deliberate action.
+ *
+ * Both keys live here, in the API, and never in the browser bundle.
  */
 export async function transcribeAudio(
   audio: Buffer,
@@ -43,7 +49,11 @@ export async function transcribeAudio(
 ): Promise<string> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    throw new Error("GROQ_API_KEY is not set.");
+    // Surfaced to the owner under the mic button, not thrown into the sale
+    // path: dictation is optional, and the rest of the app works without it.
+    throw new Error(
+      "Dictation is unavailable: GROQ_API_KEY is not set. Typing still works.",
+    );
   }
 
   const form = new FormData();

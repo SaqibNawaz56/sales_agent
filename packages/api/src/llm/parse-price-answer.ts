@@ -1,4 +1,4 @@
-import { createModel } from "./create-model";
+import { createStructuredModel } from "./create-model";
 import { PRICE_ANSWER_PROMPT } from "./prompts";
 import { priceAnswerSchema, type PriceAnswer } from "./schemas";
 
@@ -13,9 +13,10 @@ export async function parsePriceAnswer(
   question: string,
   reply: string,
 ): Promise<PriceAnswer> {
-  const model = createModel("answer:price").withStructuredOutput(
+  const model = createStructuredModel(
     priceAnswerSchema,
-    { name: "price_answer" },
+    "price_answer",
+    "answer:price",
   );
 
   const result = await model.invoke([
