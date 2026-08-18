@@ -4,7 +4,52 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--paper);
   color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  font:
+    15px/1.55 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/*
+ * Every figure on this screen is money or a count, and money belongs in
+ * columns. Tabular figures are fixed-width, so a total of 1,200 and one of
+ * 900 line up on the decimal instead of drifting — the difference between a
+ * receipt and a chat log.
+ *
+ * Applied globally rather than per component, because there is no number
+ * anywhere in this interface that reads better proportionally.
+ */
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * One focus treatment for the whole app.
+ *
+ * :focus-visible, not :focus, so a mouse click on a button does not leave a
+ * ring behind while keyboard users still get one.
+ */
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+button {
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

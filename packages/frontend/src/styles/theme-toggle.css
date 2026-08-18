@@ -1,0 +1,31 @@
+/*
+ * The light/dark switch, at the end of the header.
+ *
+ * Quiet by design. It is a preference, not part of logging a sale, so it gets
+ * the same muted treatment as the mic button rather than any of the emerald
+ * reserved for money.
+ */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--panel-soft);
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.theme-toggle:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: var(--panel-sunk);
+}

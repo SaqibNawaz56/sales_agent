@@ -12,6 +12,7 @@
 @import "./app-shell.css";
 @import "./header.css";
 @import "./usage.css";
+@import "./theme-toggle.css";
 @import "./transcript.css";
 @import "./message-bubble.css";
 @import "./answer-choices.css";

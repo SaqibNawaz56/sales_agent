@@ -15,37 +15,50 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
-  max-width: 85%;
+  max-width: 88%;
+  animation: bubble-in 180ms ease-out;
 }
 
 .choice {
-  padding: 9px 15px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: #fff;
+  padding: 9px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-strong);
+  background: var(--panel);
   color: var(--ink);
-  font: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
 }
 
 .choice:hover:not(:disabled) {
-  border-color: var(--owner);
+  border-color: var(--ink-soft);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
-.choice:focus-visible {
-  outline: 2px solid var(--owner);
-  outline-offset: 2px;
+.choice:active:not(:disabled) {
+  transform: none;
 }
 
-/* The affirmative option is the one that writes to the database — adding a
-   customer, or opening the flow that adds a product. It is weighted, but not
-   so much that pressing it feels like the only way forward. */
+/*
+ * The affirmative option is the one that writes to the database — adding a
+ * customer, or opening the flow that adds a product. It is weighted, but as an
+ * outlined emerald rather than a solid one: a filled button here would read as
+ * loud as Confirm, and only Confirm saves a sale.
+ */
 .choice.affirm {
-  background: var(--confirm);
-  border-color: var(--confirm);
-  color: #fff;
+  background: var(--brand-soft);
+  border-color: var(--brand-line);
+  color: var(--brand);
+}
+
+.choice.affirm:hover:not(:disabled) {
+  border-color: var(--brand);
 }
 
 .choice.reject {
@@ -53,6 +66,7 @@
 }
 
 .choice:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }

@@ -1,5 +1,12 @@
+/*
+ * The app floats on the page rather than filling it edge to edge.
+ *
+ * On a laptop that gives the conversation a defined width and a visible
+ * boundary — it reads as a document you are working in, not a web page. The
+ * margin collapses to zero below 760px so a phone still gets the full screen.
+ */
 .app {
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
   height: 100vh;
   /* dvh accounts for mobile browser chrome, which 100vh does not; the composer
@@ -9,4 +16,16 @@
   flex-direction: column;
   background: var(--panel);
   border-inline: 1px solid var(--line);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 820px) {
+  .app {
+    height: calc(100dvh - 48px);
+    margin-block: 24px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    /* Clips the header's rounded top and the composer's rounded bottom. */
+    overflow: hidden;
+  }
 }

@@ -1,4 +1,4 @@
-import type { DraftSale } from "../draft";
+import type { AnswerChoice, DraftSale } from "../draft";
 
 /**
  * Enough to fetch the receipt for a sale that was just written.
@@ -23,6 +23,12 @@ export interface TurnResult {
   question: string | null;
   /** Set only by a confirmation that actually wrote a sale. */
   receipt?: WrittenReceipt | null;
+  /**
+   * A question that did not come from a draft sale — currently only the price
+   * change confirmation. presentQuestion derives its output from the draft, and
+   * a price change has no draft, so it is carried here instead.
+   */
+  pendingQuestion?: { text: string; choices: AnswerChoice[] } | null;
 }
 
 /** The MCP server's save_sale response. */

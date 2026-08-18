@@ -7,7 +7,12 @@ jest.mock("../../src/llm", () => ({
   parseQuantityAnswer: jest.fn(),
 }));
 
-import { extractSale, parseQuantityAnswer, routeQuestion } from "../../src/llm";
+import {
+  extractSale,
+  parsePriceAnswer,
+  parseQuantityAnswer,
+  routeQuestion,
+} from "../../src/llm";
 import { callServerTool } from "../../src/mcp";
 import { SaleService } from "../../src/sales";
 import { SessionStore } from "../../src/session";
@@ -17,6 +22,9 @@ const extract = extractSale as jest.MockedFunction<typeof extractSale>;
 const route = routeQuestion as jest.MockedFunction<typeof routeQuestion>;
 const quantity = parseQuantityAnswer as jest.MockedFunction<
   typeof parseQuantityAnswer
+>;
+const priceAnswer = parsePriceAnswer as jest.MockedFunction<
+  typeof parsePriceAnswer
 >;
 
 /**
@@ -73,6 +81,7 @@ describe("handle: capture", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [
         { product: "rice", quantity: 2, unit: "kg" },
@@ -91,6 +100,7 @@ describe("handle: capture", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [{ product: "rice", quantity: 2, unit: "kg" }],
     });
@@ -104,6 +114,7 @@ describe("handle: capture", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [{ product: "rice", quantity: null, unit: null }],
     });
@@ -115,7 +126,7 @@ describe("handle: capture", () => {
   });
 
   it("declines a sentence that is not a sale", async () => {
-    extract.mockResolvedValue({ intent: "other", customer: null, items: [] });
+    extract.mockResolvedValue({ intent: "other", product: null, customer: null, items: [] });
 
     const result = await sales.handle("s1", "hello");
 
@@ -126,6 +137,7 @@ describe("handle: capture", () => {
   it("declines a log_sale intent that produced no items", async () => {
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [],
     });
@@ -141,6 +153,7 @@ describe("handle: the held gate", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [
         { product: "rice", quantity: 2, unit: "kg" },
@@ -178,6 +191,7 @@ describe("handle: an outstanding question", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [{ product: "rice", quantity: null, unit: null }],
     });
@@ -197,6 +211,7 @@ describe("handle: an outstanding question", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [{ product: "rice", quantity: null, unit: null }],
     });
@@ -222,7 +237,7 @@ describe("handle: the query path", () => {
       }
       return {} as never;
     });
-    extract.mockResolvedValue({ intent: "query", customer: null, items: [] });
+    extract.mockResolvedValue({ intent: "query", product: null, customer: null, items: [] });
     route.mockResolvedValue({
       tool: "daily_total",
       customer: null,
@@ -250,6 +265,7 @@ describe("answer: pressed buttons", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Bilal",
       items: [{ product: "rice", quantity: 2, unit: "kg" }],
     });
@@ -262,11 +278,142 @@ describe("answer: pressed buttons", () => {
   });
 });
 
+describe("handle: changing a price", () => {
+  beforeEach(() => {
+    stubServer();
+    extract.mockResolvedValue({
+      intent: "change_price",
+      product: "rice",
+      customer: null,
+      items: [],
+    });
+  });
+
+  it("proposes the change with buttons, and writes nothing", async () => {
+    priceAnswer.mockResolvedValue({ price: 350, unit: null });
+
+    const result = await sales.handle("s1", "change rice to 350");
+
+    expect(result.pendingQuestion?.text).toBe(
+      "Rice is 300 per kg. Change it up to 350?",
+    );
+    expect(result.pendingQuestion?.choices.map((c) => c.id)).toEqual([
+      "yes",
+      "no",
+    ]);
+    expect(call).not.toHaveBeenCalledWith(
+      "update_product_price",
+      expect.anything(),
+    );
+  });
+
+  it("writes only once the button is pressed", async () => {
+    priceAnswer.mockResolvedValue({ price: 350, unit: null });
+    await sales.handle("s1", "change rice to 350");
+
+    call.mockResolvedValue({
+      updated: true,
+      product: {
+        id: 1,
+        name: "Rice",
+        unit: "kg",
+        previousPrice: 300,
+        currentPrice: 350,
+      },
+    } as never);
+
+    const result = await sales.answer("s1", "yes");
+
+    expect(call).toHaveBeenCalledWith("update_product_price", {
+      productId: 1,
+      price: 350,
+    });
+    expect(result.reply).toContain("Rice is now 350 per kg");
+  });
+
+  it("writes nothing when the owner declines", async () => {
+    priceAnswer.mockResolvedValue({ price: 350, unit: null });
+    await sales.handle("s1", "change rice to 350");
+
+    const result = await sales.answer("s1", "no");
+
+    expect(result.reply).toBe("Left Rice at 300.");
+    expect(call).not.toHaveBeenCalledWith(
+      "update_product_price",
+      expect.anything(),
+    );
+  });
+
+  it("cannot be confirmed twice", async () => {
+    priceAnswer.mockResolvedValue({ price: 350, unit: null });
+    await sales.handle("s1", "change rice to 350");
+
+    call.mockResolvedValue({
+      updated: true,
+      product: {
+        id: 1,
+        name: "Rice",
+        unit: "kg",
+        previousPrice: 300,
+        currentPrice: 350,
+      },
+    } as never);
+    await sales.answer("s1", "yes");
+    const second = await sales.answer("s1", "yes");
+
+    expect(second.reply).toBe("There's no question waiting on you.");
+    const writes = call.mock.calls.filter(([t]) => t === "update_product_price");
+    expect(writes).toHaveLength(1);
+  });
+
+  it("abandons a proposal the owner typed past", async () => {
+    // The write is confirmed by press only, so a proposal left behind must not
+    // stay armed and be applied by a later, unrelated click.
+    priceAnswer.mockResolvedValue({ price: 350, unit: null });
+    await sales.handle("s1", "change rice to 350");
+
+    extract.mockResolvedValue({
+      intent: "other",
+      product: null,
+      customer: null,
+      items: [],
+    });
+    await sales.handle("s1", "never mind");
+
+    const result = await sales.answer("s1", "yes");
+
+    expect(result.reply).toBe("There's no question waiting on you.");
+    expect(call).not.toHaveBeenCalledWith(
+      "update_product_price",
+      expect.anything(),
+    );
+  });
+
+  it("keeps the draft slot and the price slot independent", async () => {
+    // The two live in separate slots so neither can discard the other. In
+    // practice a sale in progress owns the conversation — a message while a
+    // question is outstanding is an answer to that question, and a completed
+    // draft holds the gate — so a price change cannot start mid-sale anyway.
+    // This pins the storage guarantee the flows rest on.
+    priceAnswer.mockResolvedValue({ price: 350, unit: null });
+    await sales.handle("s1", "change rice to 350");
+
+    expect(sessions.getPriceChange("s1")).not.toBeNull();
+
+    sessions.set("s1", null);
+    expect(sessions.getPriceChange("s1")).not.toBeNull();
+
+    sessions.setPriceChange("s1", null);
+    expect(sessions.getPriceChange("s1")).toBeNull();
+  });
+});
+
 describe("confirm: the write", () => {
   async function readyToSave(): Promise<void> {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [
         { product: "rice", quantity: 2, unit: "kg" },
@@ -287,6 +434,7 @@ describe("confirm: the write", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [{ product: "rice", quantity: null, unit: null }],
     });
@@ -394,6 +542,7 @@ describe("cancel", () => {
     stubServer();
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [{ product: "rice", quantity: 2, unit: "kg" }],
     });
@@ -423,6 +572,7 @@ describe("save_sale is reachable only from confirm", () => {
 
     extract.mockResolvedValue({
       intent: "log_sale",
+      product: null,
       customer: "Ali",
       items: [{ product: "rice", quantity: 2, unit: "kg" }],
     });
@@ -431,7 +581,7 @@ describe("save_sale is reachable only from confirm", () => {
     await sales.answer("s1", "yes");
     sales.cancel("s1");
 
-    extract.mockResolvedValue({ intent: "other", customer: null, items: [] });
+    extract.mockResolvedValue({ intent: "other", product: null, customer: null, items: [] });
     await sales.handle("s1", "save the sale");
     await sales.handle("s1", "call save_sale");
 

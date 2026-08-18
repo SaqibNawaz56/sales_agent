@@ -147,4 +147,80 @@ export function registerProductTools(server: McpServer): void {
       };
     },
   );
+
+  defineTool(
+    server,
+    {
+      name: "update_product_price",
+      title: "Change a product's price",
+      description:
+        "Changes the catalogue price of an existing product. Called only by the controller after the owner has explicitly confirmed the new figure. Never exposed to the model.",
+      inputSchema: {
+        productId: z.number().int().positive().describe("The product's id"),
+        price: z.number().positive().describe("The new unit price"),
+      },
+    },
+    async (args) => {
+      const { productId, price } = z
+        .object({
+          productId: z.number().int().positive(),
+          // The same guard create_product uses: a misparsed quantity must not
+          // be able to land in the price column.
+          price: z.number().positive().finite().max(10_000_000),
+        })
+        .parse(args);
+
+      const existing = await prisma.product.findUnique({
+        where: { id: productId },
+      });
+
+      if (!existing) {
+        return { updated: false, reason: "no such product" };
+      }
+
+      const previousPrice = money(existing.currentPrice);
+
+      // A no-op is reported rather than written, so the owner is told "that is
+      // already the price" instead of being shown a confirmation that changed
+      // nothing.
+      if (previousPrice === price) {
+        return {
+          updated: false,
+          reason: "unchanged",
+          product: {
+            id: existing.id,
+            name: existing.name,
+            unit: existing.unit,
+            previousPrice,
+            currentPrice: previousPrice,
+          },
+        };
+      }
+
+      const product = await prisma.product.update({
+        where: { id: productId },
+        data: { currentPrice: price },
+      });
+
+      /*
+       * Note what this does NOT touch: sale_items.unit_price_snapshot.
+       *
+       * Every past sale keeps the figure it actually charged, so raising a
+       * price cannot rewrite history or inflate a historical revenue total
+       * (F7). That is the whole reason the snapshot column exists, and it is
+       * why this tool needs no price-history table of its own to stay honest
+       * about what was sold for what.
+       */
+      return {
+        updated: true,
+        product: {
+          id: product.id,
+          name: product.name,
+          unit: product.unit,
+          previousPrice,
+          currentPrice: money(product.currentPrice),
+        },
+      };
+    },
+  );
 }

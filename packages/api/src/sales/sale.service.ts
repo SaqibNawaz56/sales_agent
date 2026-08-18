@@ -4,6 +4,8 @@ import { applyAnswer, applyChoice } from "../clarification";
 import { emptyDraft, newItem } from "../draft";
 import { extractSale } from "../llm";
 import { callServerTool } from "../mcp";
+import { applyPriceChange, proposePriceChange } from "../pricing";
+import { CHOICE_YES } from "../questions";
 import { answerQuery } from "../reporting";
 import { SessionStore } from "../session";
 import { formatSummary } from "../summary";
@@ -168,6 +170,35 @@ export class SaleService {
    * double-tap.
    */
   async answer(sessionId: string, choiceId: string): Promise<TurnResult> {
+    // A pending price change owns the buttons while it is outstanding. It is
+    // checked first because it has no draft, so the draft-based guard below
+    // would refuse it as "no question waiting on you".
+    const priceChange = this.sessions.getPriceChange(sessionId);
+    if (priceChange) {
+      if (!priceChange.choices.some((choice) => choice.id === choiceId)) {
+        return {
+          reply: "That option isn't available any more.",
+          draft: this.sessions.get(sessionId),
+          awaitingConfirmation: false,
+          question: null,
+        };
+      }
+
+      this.sessions.setPriceChange(sessionId, null);
+
+      const reply =
+        choiceId === CHOICE_YES
+          ? await applyPriceChange(priceChange)
+          : `Left ${priceChange.productName} at ${priceChange.currentPrice}.`;
+
+      return {
+        reply,
+        draft: this.sessions.get(sessionId),
+        awaitingConfirmation: false,
+        question: null,
+      };
+    }
+
     const draft = this.sessions.get(sessionId);
 
     if (!draft || !draft.pending) {
@@ -199,6 +230,11 @@ export class SaleService {
   }
 
   async handle(sessionId: string, message: string): Promise<TurnResult> {
+    // A typed message abandons any price change waiting on a button. That write
+    // is confirmed by press only, so a proposal the owner typed past must not
+    // stay armed and be applied by a later, unrelated click.
+    this.sessions.setPriceChange(sessionId, null);
+
     const existing = this.sessions.get(sessionId);
 
     // A completed draft is HELD. Typing another sentence here is far more likely
@@ -238,6 +274,26 @@ export class SaleService {
     }
 
     const extracted = await extractSale(message);
+
+    if (extracted.intent === "change_price") {
+      // Not part of a sale, so it does not touch the draft. Repricing rice
+      // must not discard a sale the owner is half way through assembling.
+      const proposal = await proposePriceChange(extracted.product, message);
+      this.sessions.setPriceChange(sessionId, proposal.pending);
+
+      return {
+        reply: proposal.pending?.question ?? proposal.reply,
+        draft: this.sessions.get(sessionId),
+        awaitingConfirmation: false,
+        question: proposal.pending?.question ?? null,
+        pendingQuestion: proposal.pending
+          ? {
+              text: proposal.pending.question,
+              choices: proposal.pending.choices,
+            }
+          : null,
+      };
+    }
 
     if (extracted.intent === "query") {
       // The read path runs entirely on tokens; see reporting/.

@@ -8,6 +8,7 @@ export * from "./ItemsTable";
 export * from "./MicButton";
 export * from "./MessageBubble";
 export * from "./ReceiptLink";
+export * from "./ThemeToggle";
 export * from "./ThinkingIndicator";
 export * from "./Transcript";
 export * from "./UsageBar";

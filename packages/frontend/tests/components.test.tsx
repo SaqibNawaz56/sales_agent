@@ -9,6 +9,7 @@ import { ErrorBanner } from "../src/components/ErrorBanner";
 import { ItemsTable } from "../src/components/ItemsTable";
 import { MessageBubble } from "../src/components/MessageBubble";
 import { ReceiptLink } from "../src/components/ReceiptLink";
+import { ThemeToggle } from "../src/components/ThemeToggle";
 import { UsageMeter } from "../src/components/UsageMeter";
 
 const ITEMS: DraftItem[] = [
@@ -249,6 +250,44 @@ describe("ReceiptLink", () => {
     render(<ReceiptLink receipt={{ ...receipt, receiptNo: 1000 }} />);
 
     expect(screen.getByRole("link")).toHaveTextContent("Download receipt 1000");
+  });
+});
+
+describe("ThemeToggle", () => {
+  it("offers the light switch while dark is active", () => {
+    // The icon shows where a press goes, not where you are — a sun in dark
+    // mode, because pressing it turns the lights on.
+    render(<ThemeToggle theme="dark" onToggle={jest.fn()} />);
+
+    expect(
+      screen.getByRole("button", { name: "Switch to light mode" }),
+    ).toBeInTheDocument();
+  });
+
+  it("offers the dark switch while light is active", () => {
+    render(<ThemeToggle theme="light" onToggle={jest.fn()} />);
+
+    expect(
+      screen.getByRole("button", { name: "Switch to dark mode" }),
+    ).toBeInTheDocument();
+  });
+
+  it("names itself in words, since the icon alone is ambiguous", () => {
+    render(<ThemeToggle theme="light" onToggle={jest.fn()} />);
+
+    expect(screen.getByRole("button")).toHaveAttribute(
+      "title",
+      "Switch to dark mode",
+    );
+  });
+
+  it("calls onToggle when pressed", () => {
+    const onToggle = jest.fn();
+    render(<ThemeToggle theme="light" onToggle={onToggle} />);
+
+    fireEvent.click(screen.getByRole("button"));
+
+    expect(onToggle).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -1,25 +1,62 @@
 .bubble {
-  max-width: 80%;
-  padding: 10px 13px;
-  border-radius: 14px;
+  max-width: 78%;
+  padding: 11px 15px;
+  border-radius: var(--r-md);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  line-height: 1.5;
+  /* Each bubble arrives rather than appearing, which makes a slow reply read
+     as the assistant answering instead of the page repainting. */
+  animation: bubble-in 180ms ease-out;
 }
 
 .bubble.agent {
   align-self: flex-start;
-  background: #eef1f4;
-  border-bottom-left-radius: 4px;
+  background: var(--panel-sunk);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 5px;
 }
 
+/*
+ * The owner's own words, in deep slate.
+ *
+ * Not the brand emerald and not a bright blue: emerald means "this writes a
+ * sale", and a saturated bubble would compete with the one button on screen
+ * that does.
+ */
 .bubble.owner {
   align-self: flex-end;
   background: var(--owner);
-  color: #fff;
-  border-bottom-right-radius: 4px;
+  color: var(--owner-ink);
+  border: 1px solid var(--owner);
+  border-bottom-right-radius: 5px;
+  box-shadow: var(--shadow-sm);
 }
 
 .bubble.thinking {
   color: var(--muted);
   font-style: italic;
+  background: transparent;
+  border-color: transparent;
+}
+
+/*
+ * The agent's monospace summary — the itemised sale — keeps its columns.
+ * It arrives as pre-wrapped text in a normal bubble, and a proportional font
+ * turns the aligned totals into ragged noise.
+ */
+.bubble.agent {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }

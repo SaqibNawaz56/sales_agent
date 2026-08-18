@@ -1,9 +1,15 @@
+/*
+ * The sale awaiting approval, styled as a document rather than as a chat
+ * message — this is the one screen where the owner is reading figures he is
+ * about to commit to, and it should feel like a receipt, not a reply.
+ */
 .card {
   align-self: stretch;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 6%);
+  background: var(--panel);
+  box-shadow: var(--shadow-md);
 
   /*
    * Load-bearing, and not obvious.
@@ -24,10 +30,19 @@
   flex-shrink: 0;
 }
 
+/* An emerald rule along the top edge — the card is about to become money. */
 .card-head {
-  padding: 11px 14px;
-  background: #fbfcfd;
+  padding: 13px 16px;
+  background: var(--panel-soft);
   border-bottom: 1px solid var(--line);
+  border-top: 3px solid var(--brand);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.card-head strong {
+  color: var(--ink);
+  font-weight: 650;
 }
 
 /* A long sale must not push its own totals and buttons out of reach: the item
@@ -35,6 +50,8 @@
 .card-body {
   max-height: 42vh;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }
 
 .items {
@@ -45,17 +62,27 @@
 
 .items th,
 .items td {
-  padding: 8px 14px;
+  padding: 10px 16px;
   text-align: left;
   border-bottom: 1px solid var(--line);
 }
 
 .items th {
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.06em;
   color: var(--muted);
+  background: var(--panel-soft);
+  /* The column headings stay visible while a long item list scrolls under
+     them, so a figure is never read against the wrong column. */
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.items td:first-child {
+  font-weight: 550;
 }
 
 .items .num {
@@ -67,50 +94,76 @@
   border-bottom: none;
 }
 
+/* The figure being approved. Given its own weight and a sunk background so the
+   eye reaches it before the buttons. */
 .card-total {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 10px 14px;
-  border-top: 1px solid var(--line);
+  padding: 13px 16px;
+  background: var(--panel-sunk);
+  border-top: 1px solid var(--line-strong);
   font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.06em;
 }
 
 .card-total strong {
-  font-size: 16px;
+  font-size: 21px;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-transform: none;
   font-variant-numeric: tabular-nums;
 }
 
 .card-actions {
   display: flex;
   gap: 10px;
-  padding: 12px 14px;
-  background: #fbfcfd;
+  padding: 14px 16px;
+  background: var(--panel-soft);
   border-top: 1px solid var(--line);
 }
 
 .card-actions button {
   flex: 1;
-  padding: 9px 14px;
-  border-radius: 8px;
+  padding: 11px 16px;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 650;
   cursor: pointer;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
 }
 
 .card-actions .confirm {
-  background: var(--confirm);
-  color: #fff;
+  background: var(--brand);
+  color: var(--on-brand);
+  box-shadow: var(--shadow-sm);
+}
+
+.card-actions .confirm:hover:not(:disabled) {
+  background: var(--brand-hover);
+  box-shadow: var(--focus);
 }
 
 .card-actions .cancel {
-  background: #fff;
-  border-color: var(--line);
+  background: var(--panel);
+  border-color: var(--line-strong);
+  color: var(--ink-soft);
+}
+
+.card-actions .cancel:hover:not(:disabled) {
+  border-color: var(--ink-soft);
   color: var(--ink);
 }
 
 .card-actions button:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
 }

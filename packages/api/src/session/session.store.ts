@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 
 import type { DraftSale } from "../draft";
+import type { PendingPriceChange } from "../pricing";
 
 /**
  * Server-side session store.
@@ -22,6 +23,15 @@ import type { DraftSale } from "../draft";
  */
 interface Session {
   draft: DraftSale | null;
+  /**
+   * A price change shown and not yet accepted.
+   *
+   * Its own slot rather than a field on the draft, because a price change is
+   * not part of a sale — the owner can reprice rice while a sale is half
+   * assembled, and folding the two together would make cancelling one discard
+   * the other.
+   */
+  priceChange: PendingPriceChange | null;
   lastSeen: number;
 }
 
@@ -43,6 +53,23 @@ export class SessionStore {
     }
   }
 
+  /** Touches lastSeen and returns the row, creating one if needed. */
+  private touch(sessionId: string): Session {
+    this.sweep();
+    const existing = this.sessions.get(sessionId);
+    if (existing) {
+      existing.lastSeen = Date.now();
+      return existing;
+    }
+    const created: Session = {
+      draft: null,
+      priceChange: null,
+      lastSeen: Date.now(),
+    };
+    this.sessions.set(sessionId, created);
+    return created;
+  }
+
   get(sessionId: string): DraftSale | null {
     this.sweep();
     const session = this.sessions.get(sessionId);
@@ -51,12 +78,26 @@ export class SessionStore {
     return session.draft;
   }
 
+  /** Writes the draft, leaving any pending price change alone. */
   set(sessionId: string, draft: DraftSale | null): void {
-    this.sessions.set(sessionId, { draft, lastSeen: Date.now() });
+    this.touch(sessionId).draft = draft;
   }
 
   clear(sessionId: string): void {
     this.set(sessionId, null);
+  }
+
+  getPriceChange(sessionId: string): PendingPriceChange | null {
+    this.sweep();
+    const session = this.sessions.get(sessionId);
+    if (!session) return null;
+    session.lastSeen = Date.now();
+    return session.priceChange;
+  }
+
+  /** Writes the pending price change, leaving any draft sale alone. */
+  setPriceChange(sessionId: string, change: PendingPriceChange | null): void {
+    this.touch(sessionId).priceChange = change;
   }
 
   /** Test and diagnostic helper. Not part of the request path. */

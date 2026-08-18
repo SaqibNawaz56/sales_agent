@@ -1,12 +1,12 @@
 /*
  * The dictation button, sitting between the input and Send.
  *
- * Every rule is scoped `.composer .mic` rather than plain `.mic`, and that is
- * not decoration. composer.css styles `.composer button` — one class plus one
- * element, specificity (0,1,1) — which outranks a bare `.mic` at (0,1,0). A
- * plain `.mic` therefore loses its padding and background to the Send button's,
- * and renders as a blue box with the icon crushed out of sight. Scoping to
- * (0,2,0) wins cleanly without resorting to !important.
+ * Every rule is scoped `.composer .mic` rather than plain `.mic`. That began as
+ * a specificity fix — composer.css once styled every `.composer button`, which
+ * outranked a bare `.mic` and rendered this as a filled box with the icon
+ * crushed out of sight. Send is now targeted by `button[type="submit"]` and no
+ * longer collides, but the scoping stays: it keeps the two buttons' rules
+ * visibly separate, which is the property that made the bug possible to miss.
  *
  * Deliberately quiet when idle: dictation is an alternative to typing, not the
  * primary action, and the only button on this screen that should shout is the
@@ -17,23 +17,22 @@
   align-items: center;
   justify-content: center;
   align-self: stretch;
-  width: 44px;
+  width: 46px;
   padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: #fff;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--panel);
   color: var(--muted);
   cursor: pointer;
+  transition:
+    color 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease;
 }
 
 .composer .mic:hover:not(:disabled) {
   color: var(--ink);
-  border-color: var(--owner);
-}
-
-.composer .mic:focus-visible {
-  outline: 2px solid var(--owner);
-  outline-offset: 2px;
+  border-color: var(--ink-soft);
 }
 
 .composer .mic:disabled {
@@ -48,25 +47,25 @@
 .composer .mic.recording {
   background: var(--danger);
   border-color: var(--danger);
-  color: #fff;
+  color: var(--on-danger);
   animation: mic-pulse 1.4s ease-in-out infinite;
 }
 
 /* Waiting on the server. Disabled, so a second press cannot start a new
    recording on top of one still being transcribed. */
 .composer .mic.transcribing {
-  background: #fff;
-  border-color: var(--line);
-  color: var(--owner);
+  background: var(--panel);
+  border-color: var(--brand-line);
+  color: var(--brand);
 }
 
 @keyframes mic-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgb(180 35 44 / 45%);
+    box-shadow: 0 0 0 0 rgb(163 32 41 / 45%);
   }
   50% {
-    box-shadow: 0 0 0 6px rgb(180 35 44 / 0%);
+    box-shadow: 0 0 0 6px rgb(163 32 41 / 0%);
   }
 }
 
@@ -81,7 +80,7 @@
 /* Sits above the composer rather than inside it, so the composer row keeps the
    exact layout it had before dictation existed. */
 .mic-note {
-  padding: 8px 18px 0;
+  padding: 10px 20px 0;
   color: var(--danger);
   font-size: 13px;
 }

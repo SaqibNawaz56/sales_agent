@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
     environment:
       GROQ_API_KEY: ${GROQ_API_KEY}
-      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
       MCP_SERVER_URL: ${MCP_SERVER_URL:-http://mcp-server:3001/mcp}
       API_PORT: 3000
     ports:

@@ -1,8 +1,31 @@
 .error {
   align-self: stretch;
-  padding: 10px 13px;
-  border: 1px solid #f0c4c7;
-  background: #fdf1f2;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 14px;
+  border: 1px solid var(--danger-line);
+  /* A red bar down the leading edge, so a failure is identifiable at a glance
+     rather than only by reading it. */
+  border-inline-start: 3px solid var(--danger);
+  background: var(--danger-soft);
   color: var(--danger);
-  border-radius: 10px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  animation: bubble-in 180ms ease-out;
+}
+
+.error::before {
+  content: "!";
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  border-radius: var(--r-pill);
+  background: var(--danger);
+  color: var(--on-danger);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
 }

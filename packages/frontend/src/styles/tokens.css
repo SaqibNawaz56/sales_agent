@@ -1,11 +1,166 @@
+/*
+ * The palette, and the one rule that governs it.
+ *
+ * ONE LOUD COLOUR. Emerald is reserved for money — the Confirm button, the
+ * receipt link, a healthy quota. Nothing else on the screen is allowed to be
+ * saturated, so the eye lands on the irreversible action without having to
+ * hunt for it. The owner's own messages are deep slate rather than a bright
+ * blue for exactly this reason: a chat bubble competing with the save button
+ * is a chat bubble that costs somebody a mis-click.
+ *
+ * The neutrals are warm, not grey. This is a bookkeeping tool whose name means
+ * "the accounts", and it replaces a paper register — off-white paper and ink
+ * read as a ledger, where cool greys read as a dashboard. The dark theme keeps
+ * that warmth rather than going blue-black.
+ *
+ * THREE BLOCKS, and the order matters:
+ *   1. :root                        — light, the default
+ *   2. @media dark + :not([light])  — follows the OS when no choice is stored
+ *   3. :root[data-theme="dark"]     — an explicit choice, which wins outright
+ *
+ * The dark values are written twice on purpose. CSS has no way to share one
+ * declaration block between a media query and a plain selector, and the
+ * alternative — a layer of indirection through intermediate properties — is
+ * harder to read than the repetition it saves.
+ */
 :root {
-  --bg: #f6f7f9;
+  /* Surfaces. --paper is the page behind the app; --panel is the app itself,
+     floating on it. */
+  --paper: #f4f2ed;
   --panel: #ffffff;
-  --line: #e3e6ea;
-  --ink: #1c2128;
-  --muted: #6b7480;
-  --owner: #2f6feb;
-  --confirm: #1f8a4c;
-  --danger: #b4232c;
+  --panel-soft: #faf9f6;
+  --panel-sunk: #f0eee8;
+
+  /* Ink. Near-black with a faint green cast so it sits with the brand rather
+     than against it. */
+  --ink: #15191c;
+  --ink-soft: #3c454c;
+  /*
+   * Darkened from #6c757d, which measured 4.04:1 against --panel-sunk — the
+   * session-id pill and the quota block sit on that surface, so the lightest
+   * background it appears against is what has to clear 4.5:1, not white.
+   */
+  --muted: #5f6870;
+
+  /* Warm borders, to match the paper rather than fight it. */
+  --line: #e4e0d7;
+  --line-strong: #d2ccbf;
+
+  /* The brand. Deep enough to carry white text at 6.5:1. */
+  --brand: #0f6b45;
+  --brand-hover: #0c5637;
+  --brand-soft: #e7f1eb;
+  --brand-line: #bcd9c9;
+  /* Text laid ON a solid --brand fill. Flips with the theme, because dark mode
+     uses a bright emerald that white text cannot sit on legibly. */
+  --on-brand: #ffffff;
+
+  /* The owner's voice. Deliberately unsaturated. */
+  --owner: #26323f;
+  --owner-ink: #ffffff;
+
+  --warn: #8a6210;
+  --danger: #a32029;
+  /* Text laid ON a solid --danger fill, for the same reason as --on-brand. */
+  --on-danger: #ffffff;
+  --danger-soft: #fdf2f2;
+  --danger-line: #f0d2d4;
+
+  /* Radii and shadows, as a scale rather than ad hoc numbers. */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgb(21 25 28 / 6%);
+  --shadow-md: 0 2px 4px rgb(21 25 28 / 5%), 0 6px 16px rgb(21 25 28 / 6%);
+  --shadow-lg: 0 1px 3px rgb(21 25 28 / 6%), 0 12px 32px rgb(21 25 28 / 8%);
+
+  --focus: 0 0 0 3px rgb(15 107 69 / 22%);
+
   color-scheme: light;
+}
+
+/* Follows the operating system, unless an explicit light choice is stored. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #101315;
+    --panel: #191d20;
+    --panel-soft: #1f2427;
+    --panel-sunk: #262b2f;
+
+    --ink: #e9e6e0;
+    --ink-soft: #b4bbc1;
+    /* 5.6:1 on --panel-sunk, the lightest surface it appears against. */
+    --muted: #939ba2;
+
+    --line: #2c3237;
+    --line-strong: #3c444b;
+
+    /* Lifted well above the light-theme emerald: #0f6b45 on a dark panel is
+       muddy and fails contrast as text. */
+    --brand: #45c48c;
+    --brand-hover: #5ed3a0;
+    --brand-soft: #14291f;
+    --brand-line: #2d5a44;
+    /* Dark text on the bright fill, which is the legible pairing here. */
+    --on-brand: #062114;
+
+    --owner: #39454f;
+    --owner-ink: #eef2f5;
+
+    --warn: #e0aa4a;
+    --danger: #f0787f;
+    --on-danger: #2a0d10;
+    --danger-soft: #2a1719;
+    --danger-line: #4d2a2d;
+
+    /* Deeper and blacker: a shadow tuned for white surfaces is invisible on
+       dark ones. */
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+    --shadow-md: 0 2px 4px rgb(0 0 0 / 34%), 0 6px 16px rgb(0 0 0 / 40%);
+    --shadow-lg: 0 1px 3px rgb(0 0 0 / 40%), 0 12px 32px rgb(0 0 0 / 50%);
+
+    --focus: 0 0 0 3px rgb(69 196 140 / 26%);
+
+    color-scheme: dark;
+  }
+}
+
+/* An explicit choice from the toggle. Wins over the OS in both directions. */
+:root[data-theme="dark"] {
+  --paper: #101315;
+  --panel: #191d20;
+  --panel-soft: #1f2427;
+  --panel-sunk: #262b2f;
+
+  --ink: #e9e6e0;
+  --ink-soft: #b4bbc1;
+  --muted: #939ba2;
+
+  --line: #2c3237;
+  --line-strong: #3c444b;
+
+  --brand: #45c48c;
+  --brand-hover: #5ed3a0;
+  --brand-soft: #14291f;
+  --brand-line: #2d5a44;
+  --on-brand: #062114;
+
+  --owner: #39454f;
+  --owner-ink: #eef2f5;
+
+  --warn: #e0aa4a;
+  --danger: #f0787f;
+  --on-danger: #2a0d10;
+  --danger-soft: #2a1719;
+  --danger-line: #4d2a2d;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 34%), 0 6px 16px rgb(0 0 0 / 40%);
+  --shadow-lg: 0 1px 3px rgb(0 0 0 / 40%), 0 12px 32px rgb(0 0 0 / 50%);
+
+  --focus: 0 0 0 3px rgb(69 196 140 / 26%);
+
+  color-scheme: dark;
 }

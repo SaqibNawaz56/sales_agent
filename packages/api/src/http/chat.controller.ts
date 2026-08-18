@@ -59,7 +59,10 @@ export class ChatController {
       return {
         reply: result.reply,
         draftSale: presentDraft(result.draft),
-        question: presentQuestion(result.draft),
+        // A price-change confirmation has no draft to derive from, so it is
+        // carried on the turn itself. Same shape on the wire either way, which
+        // is why the client needs no change to render it.
+        question: presentQuestion(result.draft) ?? result.pendingQuestion ?? null,
         awaitingConfirmation: result.awaitingConfirmation,
       };
     } catch (error) {
@@ -87,7 +90,10 @@ export class ChatController {
       return {
         reply: result.reply,
         draftSale: presentDraft(result.draft),
-        question: presentQuestion(result.draft),
+        // A price-change confirmation has no draft to derive from, so it is
+        // carried on the turn itself. Same shape on the wire either way, which
+        // is why the client needs no change to render it.
+        question: presentQuestion(result.draft) ?? result.pendingQuestion ?? null,
         awaitingConfirmation: result.awaitingConfirmation,
       };
     } catch (error) {

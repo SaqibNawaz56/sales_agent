@@ -9,6 +9,9 @@
  * makes right-click, middle-click and share behave, and none of those survive a
  * click handler that fetches a blob.
  *
+ * Emerald, because it belongs to the money family — but outlined rather than
+ * filled, since nothing is at stake in pressing it.
+ *
  * flex-shrink: 0 for the same reason .choices and .card carry it — a flex item
  * in a column container must not be compressed out of reach.
  */
@@ -18,22 +21,30 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 15px;
-  border-radius: 999px;
-  border: 1px solid var(--confirm);
-  background: #fff;
-  color: var(--confirm);
+  padding: 10px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--brand-line);
+  background: var(--brand-soft);
+  color: var(--brand);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 650;
   text-decoration: none;
+  animation: bubble-in 180ms ease-out;
+  transition:
+    background 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease,
+    transform 140ms ease;
 }
 
 .receipt-link:hover {
-  background: var(--confirm);
-  color: #fff;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
-.receipt-link:focus-visible {
-  outline: 2px solid var(--confirm);
-  outline-offset: 2px;
+.receipt-link:active {
+  transform: none;
 }

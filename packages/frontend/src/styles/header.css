@@ -1,18 +1,61 @@
+/*
+ * The header carries the wordmark, the quota meter and the session id.
+ *
+ * The mark is drawn in CSS rather than added to the markup — a small emerald
+ * ledger square before the name. Keeping it here means the brand can change
+ * without touching a component, and Header.tsx stays a plain <h1>.
+ */
 .header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--panel);
   border-bottom: 1px solid var(--line);
 }
 
 .header h1 {
-  font-size: 17px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  /* Slightly tightened, which is what makes a short word read as a wordmark
+     rather than as a heading. */
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+/* The mark: a ledger block with a rule through it. */
+.header h1::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background:
+    linear-gradient(transparent 9px, var(--on-brand) 9px 11px, transparent 11px),
+    var(--brand);
+  box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .session {
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
   color: var(--muted);
+  background: var(--panel-sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+/* The session id is a debugging aid, not something a shopkeeper needs mid-sale.
+   It is the first thing to go when the header runs out of room. */
+@media (max-width: 560px) {
+  .session {
+    display: none;
+  }
 }
