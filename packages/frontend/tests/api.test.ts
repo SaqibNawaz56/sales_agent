@@ -1,5 +1,4 @@
 import { answerQuestion } from "../src/api/answer-question";
-import { fetchUsage } from "../src/api/fetch-usage";
 import { postJson } from "../src/api/post-json";
 import { resolveSale } from "../src/api/resolve-sale";
 import { sendMessage } from "../src/api/send-message";
@@ -108,62 +107,5 @@ describe("the three endpoints", () => {
       sessionId: "s1",
       confirmed,
     });
-  });
-});
-
-describe("fetchUsage", () => {
-  it("normalises a well-formed response", async () => {
-    fetchMock().mockResolvedValue(
-      jsonResponse({
-        chat: {
-          tokens: { limit: 12000, remaining: 9500, resetMs: 7660 },
-          requests: { limit: 1000, remaining: 994, resetMs: 62000 },
-          audioSeconds: { limit: null, remaining: null, resetMs: null },
-          observedAt: 1_000,
-          spentTokens: 2500,
-          calls: 3,
-        },
-        transcription: {},
-        serverTime: 2_000,
-      }),
-    );
-
-    const usage = await fetchUsage();
-
-    expect(usage.chat.tokens.remaining).toBe(9500);
-    expect(usage.chat.calls).toBe(3);
-    expect(usage.serverTime).toBe(2000);
-  });
-
-  it("coerces a missing bucket to renderable nulls rather than throwing", async () => {
-    // UsageMeter renders with no error boundary above it, so an unexpected
-    // shape throwing during render would unmount a sale mid-confirmation.
-    fetchMock().mockResolvedValue(jsonResponse({}));
-
-    const usage = await fetchUsage();
-
-    expect(usage.chat.tokens).toEqual({
-      limit: null,
-      remaining: null,
-      resetMs: null,
-    });
-    expect(usage.chat.calls).toBe(0);
-  });
-
-  it("coerces a non-numeric field to null", async () => {
-    fetchMock().mockResolvedValue(
-      jsonResponse({ chat: { tokens: { limit: "lots", remaining: 5 } } }),
-    );
-
-    const usage = await fetchUsage();
-
-    expect(usage.chat.tokens.limit).toBeNull();
-    expect(usage.chat.tokens.remaining).toBe(5);
-  });
-
-  it("throws on a failed request", async () => {
-    fetchMock().mockResolvedValue(jsonResponse({}, false, 503));
-
-    await expect(fetchUsage()).rejects.toThrow("Usage unavailable (503)");
   });
 });

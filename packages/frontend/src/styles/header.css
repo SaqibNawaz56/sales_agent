@@ -41,6 +41,14 @@
   flex-shrink: 0;
 }
 
+/* Moved here when the quota meter was removed — it used to live in usage.css,
+   which was the only stylesheet that knew about this row. */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .session {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 11px;

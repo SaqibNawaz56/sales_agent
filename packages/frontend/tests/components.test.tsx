@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 
 import type { DraftItem, DraftSale, PendingQuestion } from "../src/api/api.types";
-import type { Usage } from "../src/api/fetch-usage";
 import { AnswerChoices } from "../src/components/AnswerChoices";
 import { ConfirmGate } from "../src/components/ConfirmGate";
 import { ConfirmationCard } from "../src/components/ConfirmationCard";
@@ -10,7 +9,6 @@ import { ItemsTable } from "../src/components/ItemsTable";
 import { MessageBubble } from "../src/components/MessageBubble";
 import { ReceiptLink } from "../src/components/ReceiptLink";
 import { ThemeToggle } from "../src/components/ThemeToggle";
-import { UsageMeter } from "../src/components/UsageMeter";
 
 const ITEMS: DraftItem[] = [
   { product: "Rice", quantity: 2, unit: "kg", unitPrice: 300, lineTotal: 600 },
@@ -298,68 +296,5 @@ describe("ErrorBanner", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "The assistant is unavailable.",
     );
-  });
-});
-
-describe("UsageMeter", () => {
-  function usage(overrides: Partial<Usage["chat"]> = {}): Usage {
-    const empty = { limit: null, remaining: null, resetMs: null };
-    return {
-      chat: {
-        tokens: { limit: 12000, remaining: 9500, resetMs: 7660 },
-        requests: { limit: 1000, remaining: 994, resetMs: 62000 },
-        audioSeconds: empty,
-        observedAt: 1000,
-        spentTokens: 2500,
-        calls: 3,
-        ...overrides,
-      },
-      transcription: {
-        tokens: empty,
-        requests: empty,
-        audioSeconds: empty,
-        observedAt: null,
-        spentTokens: 0,
-        calls: 0,
-      },
-      serverTime: 2000,
-    };
-  }
-
-  it("renders nothing before the first reading arrives", () => {
-    const { container } = render(<UsageMeter usage={null} />);
-
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it("shows a placeholder rather than a confident zero when Groq has said nothing", () => {
-    const empty = { limit: null, remaining: null, resetMs: null };
-    const { container } = render(
-      <UsageMeter usage={usage({ tokens: empty, requests: empty })} />,
-    );
-
-    expect(container).toHaveTextContent("quota —");
-  });
-
-  it("shows both budgets, because one says nothing about the other", () => {
-    render(<UsageMeter usage={usage()} />);
-
-    expect(screen.getByText("min")).toBeInTheDocument();
-    expect(screen.getByText("day")).toBeInTheDocument();
-  });
-
-  it("shows remaining over limit, compacted for the header", () => {
-    render(<UsageMeter usage={usage()} />);
-
-    expect(screen.getByText("9.5k/12k")).toBeInTheDocument();
-    expect(screen.getByText("994/1.0k")).toBeInTheDocument();
-  });
-
-  it("escalates the styling as a budget is spent", () => {
-    const { container } = render(
-      <UsageMeter usage={usage({ tokens: { limit: 100, remaining: 5, resetMs: null } })} />,
-    );
-
-    expect(container.querySelector(".usage-row.critical")).not.toBeNull();
   });
 });

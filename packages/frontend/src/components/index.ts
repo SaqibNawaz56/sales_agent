@@ -11,5 +11,3 @@ export * from "./ReceiptLink";
 export * from "./ThemeToggle";
 export * from "./ThinkingIndicator";
 export * from "./Transcript";
-export * from "./UsageBar";
-export * from "./UsageMeter";

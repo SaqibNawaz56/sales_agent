@@ -5,7 +5,6 @@ import { HealthController } from "./http/health.controller";
 import { ReceiptController } from "./http/receipt.controller";
 import { SalesController } from "./http/sales.controller";
 import { TranscribeController } from "./http/transcribe.controller";
-import { UsageController } from "./http/usage.controller";
 import { SaleService } from "./sales";
 import { SessionStore, sessionStore } from "./session";
 
@@ -31,7 +30,6 @@ import { SessionStore, sessionStore } from "./session";
     SalesController,
     ReceiptController,
     TranscribeController,
-    UsageController,
   ],
   providers: [SaleService, { provide: SessionStore, useValue: sessionStore }],
 })

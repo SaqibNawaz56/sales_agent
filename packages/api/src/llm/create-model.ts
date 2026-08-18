@@ -3,8 +3,7 @@ import type { Runnable } from "@langchain/core/runnables";
 import { ChatOpenAI } from "@langchain/openai";
 import type { z } from "zod";
 
-import { observingFetch } from "../usage";
-import { callbacksFor, usageCallbacks } from "./callbacks";
+import { callbacksFor } from "./callbacks";
 
 /**
  * The single place a model is constructed.
@@ -39,15 +38,6 @@ export function createModel(label = "model"): ChatOpenAI {
     model: process.env.DEEPSEEK_MODEL ?? "deepseek-chat",
     configuration: {
       baseURL: process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com",
-      // Reads rate-limit headers as responses pass. Unlike ChatGroq, which
-      // took a top-level `fetch`, ChatOpenAI forwards this to the underlying
-      // OpenAI client — so it belongs in `configuration`, not beside it.
-      //
-      // DeepSeek does not send the x-ratelimit-* family that Groq does, so the
-      // chat meter simply has no reading to show. recordHeaders ignores a
-      // response carrying none rather than wiping the last good one, and the
-      // transcription meter still fills from Whisper.
-      fetch: observingFetch("chat"),
     },
     // Extraction must be repeatable: the same sale sentence has to parse the
     // same way every time, and a demo that re-rolls its answer is not a demo.
@@ -79,10 +69,11 @@ export function createModel(label = "model"): ChatOpenAI {
     // backoff turns that from a failed sale into a pause. This is the R6
     // mitigation the proposal names.
     maxRetries: 5,
-    // Two sets: usage recording is always on, because the owner needs the meter
-    // during a demo; console tracing stays behind AGENT_TRACE=1 because it is
-    // noisy. See callbacks/.
-    callbacks: [...usageCallbacks(), ...(callbacksFor(label) ?? [])],
+    // Console tracing only, behind AGENT_TRACE=1 because it is noisy. It is
+    // also now the only place per-call token cost is visible: the header-based
+    // quota meter is gone, since DeepSeek sends no rate-limit headers for it to
+    // read. See callbacks/.
+    callbacks: callbacksFor(label) ?? [],
   });
 }
 

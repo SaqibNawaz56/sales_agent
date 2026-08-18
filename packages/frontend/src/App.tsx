@@ -4,7 +4,6 @@ import {
   useScrollToLatest,
   useSessionId,
   useTheme,
-  useUsage,
 } from "./hooks";
 
 /**
@@ -31,7 +30,6 @@ export function App() {
     resolve,
   } = useConversation(sessionId);
 
-  const usage = useUsage();
   const { theme, toggle: toggleTheme } = useTheme();
 
   const { endRef, cardRef } = useScrollToLatest(awaiting, [
@@ -48,7 +46,6 @@ export function App() {
     <div className="app">
       <Header
         sessionId={sessionId}
-        usage={usage}
         theme={theme}
         onToggleTheme={toggleTheme}
       />

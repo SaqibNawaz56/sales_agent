@@ -1,4 +1,3 @@
-import { recordCall, recordHeaders } from "../usage";
 import { buildVocabularyPrompt } from "./vocabulary";
 
 const GROQ_TRANSCRIPTION_URL =
@@ -77,12 +76,6 @@ export async function transcribeAudio(
     headers: { Authorization: `Bearer ${apiKey}` },
     body: form,
   });
-
-  // Whisper is metered in its own bucket — audio seconds rather than tokens —
-  // so a busy afternoon of dictation cannot quietly eat the sale-capture
-  // allowance, and the meter shows the two separately.
-  recordHeaders("transcription", response.headers);
-  recordCall("transcription");
 
   const payload = (await response.json()) as GroqTranscription;
 

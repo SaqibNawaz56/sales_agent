@@ -126,7 +126,7 @@ npm run test --workspace @hisaab/frontend
 
 | Suite | Covers |
 |-------|--------|
-| `packages/api/tests/unit` | draft arithmetic, checklist, questions, clarification (typed and pressed), summary, pseudonymisation, the read path, `advanceDraft`, `SaleService`, the tool allowlist, request schemas, the quota meter |
+| `packages/api/tests/unit` | draft arithmetic, checklist, questions, clarification (typed and pressed), summary, pseudonymisation, the read path, `advanceDraft`, `SaleService`, the tool allowlist, request schemas, the receipt renderer |
 | `packages/frontend/tests` | `useConversation`, `useSessionId`, the API layer, and the components that gate a write — `ConfirmationCard`, `ConfirmGate`, `AnswerChoices`, `Composer` |
 
 That `npm test` costs nothing is the point, not a nicety — see the note on
@@ -249,14 +249,16 @@ confirmed action and the shop does now stock it. No *sale* is written.
 - **Drafts are in-memory.** A container restart discards a sale being assembled.
   Fine for a single-operator shop; an unconfirmed draft is not yet a business
   record. Drafts also expire after an hour.
-- **Model calls cost money, and the quota meter cannot see it.** DeepSeek is
+- **Model calls cost money, and nothing in the UI shows it.** DeepSeek is
   pay-as-you-go rather than a capped free tier, so nothing will cut you off
   mid-demo the way Groq's daily allowance could — but nothing warns you either.
-  The header-based meter in the app reads the `x-ratelimit-*` family, which
-  DeepSeek does not send, so the chat budget shows "quota —" and only the
-  dictation bucket fills. An extraction is roughly 800–1,500 tokens; the
-  integration suite plus the proof scripts is well over 100 calls. The unit
-  suites still mock the model, so the tests you run on every save cost nothing.
+  There was a header-based quota meter in the header; it read the
+  `x-ratelimit-*` family, DeepSeek sends none of it, and a meter that is
+  permanently blank is worse than no meter. `AGENT_TRACE=1` prints the cost of
+  each call and is now the only place spend is visible. An extraction is
+  roughly 800–1,500 tokens; the integration suite plus the proof scripts is
+  well over 100 calls. The unit suites still mock the model, so the tests you
+  run on every save cost nothing.
 - **A provider can retire a model without warning.** `llama-3.3-70b-versatile`
   was removed from Groq mid-build and every turn began returning 404 with no
   local change. That is the reason the model id is an environment variable and
