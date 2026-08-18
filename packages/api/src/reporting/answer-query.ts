@@ -1,4 +1,5 @@
 import { routeQuestion, type QueryRoute } from "../llm";
+import { narrate } from "../narrator";
 import { answerDailyTotal } from "./answer-daily-total";
 import { answerLastSale } from "./answer-last-sale";
 import { answerSalesByCustomer } from "./answer-sales-by-customer";
@@ -25,7 +26,19 @@ export async function answerQuery(question: string): Promise<QueryOutcome> {
   const route = await routeQuestion(outboundToModel);
 
   const answer = await resolveAnswer(route, map);
-  return { answer, outboundToModel, route };
+
+  /*
+   * The optional last step, and note where it is: AFTER the sentence has been
+   * assembled from tool results, never before.
+   *
+   * The narrator rewrites a finished answer — it is not consulted about what
+   * the answer is. It runs on a local model, so the real name and the real
+   * figures it sees do not leave the machine, which is why this is the one
+   * place in the read path a model may hold either. It is off unless
+   * NARRATOR_URL and NARRATOR_LANGUAGE are both set, and any failure — slow,
+   * absent, or a rewrite that altered a figure — returns this same sentence.
+   */
+  return { answer: await narrate(answer), outboundToModel, route };
 }
 
 /**
