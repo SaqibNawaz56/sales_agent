@@ -103,6 +103,7 @@ function systemPrompt(): string {
 
 Rules:
 - Keep every number exactly as written. Do not round, convert, recalculate or reformat any figure.
+- Keep any date in the exact form it is given, digit for digit. "2026-08-18" stays "2026-08-18"; do not turn it into a month name.
 - Keep every product name and every person's name.
 - Do not add information, opinions, greetings or advice. The sentence you are given is the whole truth.
 - Reply with the rewritten sentence and nothing else.`;
