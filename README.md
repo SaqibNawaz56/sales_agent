@@ -87,6 +87,43 @@ docker compose run --rm -w /app/packages/mcp-server mcp-server npx prisma migrat
 docker compose run --rm -w /app/packages/mcp-server mcp-server npx prisma db seed
 ```
 
+### The local narrator (optional)
+
+Query answers are assembled from database results by application code. If a
+local model is available, that finished sentence can be rewritten into the
+shop's own language before the owner sees it — on the shop's machine, so the
+customer name and the figures in it never leave the building.
+
+The model runs in its own container — `narrator` — behind a compose profile, so
+the default stack never starts it.
+
+```bash
+# one time: put a .gguf in models/ (see models/README.md)
+docker compose --profile narrator up -d
+```
+
+Then set both of these in `.env` and restart the API:
+
+```
+NARRATOR_URL=http://narrator:11434/v1
+NARRATOR_LANGUAGE=simple English
+```
+
+Off unless both are set, and it fails safe in every direction: absent, slow,
+or a rewrite whose figures do not match the original exactly, and the owner
+sees the plain English sentence instead. A bookkeeping answer that is dull but
+correct beats one that is fluent and wrong.
+
+Measured on the development laptop with `qwen2.5:1.5b`: 6s a call warm, 17s
+cold, and Urdu that was not usable — at 1.5B the translation came back as
+confident nonsense. Urdu needs 7B or better, which needs a machine with more
+than 8 GB. The English rewriting works.
+
+There is no `ollama pull` step. The weights sit in `models/` as a `.gguf` and
+are registered from disk on first boot, so the container needs no model
+registry — which matters for a shop machine that may be offline, and mattered
+here: the network this was built on could not reach one.
+
 | Service | URL | Notes |
 |---------|-----|-------|
 | Web UI | http://localhost:5173 | The primary surface |

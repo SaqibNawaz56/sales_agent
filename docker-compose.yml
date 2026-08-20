@@ -40,6 +40,57 @@ services:
       - ./packages/mcp-server/src:/app/packages/mcp-server/src
       - ./packages/mcp-server/prisma:/app/packages/mcp-server/prisma
 
+  # The local narrator's model host. OPTIONAL, and off unless asked for:
+  #
+  #   docker compose --profile narrator up -d
+  #
+  # It is behind a profile rather than always-on because the shop's own machine
+  # may not have the memory to spare, and Hisaab must run without it — the
+  # narrator degrades to the plain English answer when this container is absent.
+  #
+  # Ollama serves an OpenAI-shaped /v1/chat/completions, which is exactly what
+  # narrator/narrate.ts speaks, so the application code knows nothing about it.
+  #
+  # The model is NOT pulled at run time. models/ holds a .gguf on the host and
+  # an entrypoint registers it with Ollama on first boot — see
+  # docker/narrator-entrypoint.sh and models/README.md. That keeps the whole
+  # thing offline-installable, which matters for a shop machine and mattered
+  # here: the network this was built on could not reach a model registry.
+  narrator:
+    image: ollama/ollama:latest
+    profiles: ["narrator"]
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    environment:
+      NARRATOR_MODEL: ${NARRATOR_MODEL:-qwen2.5:1.5b}
+      NARRATOR_MODEL_FILE: ${NARRATOR_MODEL_FILE:-qwen2.5-1.5b-instruct-q4_k_m.gguf}
+    volumes:
+      # Read-only: this container has no business writing to the weights.
+      - ./models:/models:ro
+      - ./docker/narrator-entrypoint.sh:/entrypoint.sh:ro
+      # Ollama's own store. A named volume so re-registering is a one-off.
+      - narrator-models:/root/.ollama
+    ports:
+      # Published so you can probe it directly — `ollama list`, a raw
+      # completion — without going through the api container.
+      - "${NARRATOR_PORT:-11434}:11434"
+    # A hard ceiling. Docker on WSL2 gets ~4 GB in total here, and a model that
+    # grew without bound would starve the database and the API rather than
+    # simply failing to load. A 1.5B model at Q4_K_M needs ~1.2 GB in use;
+    # 2 GB leaves headroom without inviting a bigger one in.
+    mem_limit: ${NARRATOR_MEM_LIMIT:-2g}
+    healthcheck:
+      # Passes only once the model is registered, not merely when the server
+      # is listening — so `depends_on: service_healthy` would mean something.
+      test: ["CMD-SHELL", "ollama list 2>/dev/null | grep -q . || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    # No GPU section: this machine has no CUDA, and Iris Xe is not usable by
+    # Ollama. On a host with an NVIDIA card, add a deploy.resources block
+    # reserving the device and it will use it without any other change.
+
   api:
     build:
       context: .
@@ -55,8 +106,10 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY}
       GROQ_TRANSCRIBE_MODEL: ${GROQ_TRANSCRIBE_MODEL:-whisper-large-v3}
       GROQ_TRANSCRIBE_LANGUAGE: ${GROQ_TRANSCRIBE_LANGUAGE:-en}
-      # Optional local narrator. Blank by default, which disables it. Reach a
-      # host-installed Ollama at http://host.docker.internal:11434/v1.
+      # Optional local narrator. Blank by default, which disables it. With the
+      # narrator profile up, http://narrator:8080/v1 reaches the container over
+      # the compose network — no host install and no host.docker.internal,
+      # which does not exist outside Docker Desktop.
       NARRATOR_URL: ${NARRATOR_URL:-}
       NARRATOR_MODEL: ${NARRATOR_MODEL:-qwen2.5:3b}
       NARRATOR_LANGUAGE: ${NARRATOR_LANGUAGE:-}
@@ -91,3 +144,4 @@ services:
 
 volumes:
   pgdata:
+  narrator-models:

@@ -7,3 +7,6 @@ npm-debug.log*
 .DS_Store
 coverage/
 .vite/
+
+# Local narrator weights. Hundreds of MB each; fetched per-machine.
+models/*.gguf
