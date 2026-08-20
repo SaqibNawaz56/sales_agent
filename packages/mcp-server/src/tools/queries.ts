@@ -50,7 +50,7 @@ export function registerQueryTools(server: McpServer): void {
       const end = new Date(start);
       end.setUTCDate(end.getUTCDate() + 1);
 
-      const result = await prisma.sale.aggregate({
+      const result = await prisma.receipt.aggregate({
         where: { soldAt: { gte: start, lt: end } },
         _sum: { totalAmount: true },
         _count: true,
@@ -89,7 +89,7 @@ export function registerQueryTools(server: McpServer): void {
         return { found: false, customerName, sales: 0, total: 0 };
       }
 
-      const result = await prisma.sale.aggregate({
+      const result = await prisma.receipt.aggregate({
         where: { customerId: customer.id },
         _sum: { totalAmount: true },
         _count: true,
@@ -128,7 +128,7 @@ export function registerQueryTools(server: McpServer): void {
         return { found: false, customerName };
       }
 
-      const sale = await prisma.sale.findFirst({
+      const sale = await prisma.receipt.findFirst({
         where: { customerId: customer.id },
         // Newest first. `id` breaks ties, because two sales in the same
         // millisecond still have to order deterministically — otherwise "the

@@ -29,7 +29,7 @@ async function cleanup(): Promise<void> {
     where: { normalizedName: normalize(CUSTOMER) },
   });
   if (customer) {
-    await prisma.sale.deleteMany({ where: { customerId: customer.id } });
+    await prisma.receipt.deleteMany({ where: { customerId: customer.id } });
     await prisma.customer.delete({ where: { id: customer.id } });
   }
 }
@@ -55,11 +55,27 @@ async function main(): Promise<void> {
   const rice = await prisma.product.findUniqueOrThrow({ where: { normalizedName: "rice" } });
   const sugar = await prisma.product.findUniqueOrThrow({ where: { normalizedName: "sugar" } });
 
+  // receipt_date/receipt_no have no default, so rows written directly rather
+  // than through save_sale have to number themselves. Continuing from the day's
+  // highest rather than starting at 1 keeps this off any receipt number the
+  // shop's real rows already hold — the unique index would refuse a collision.
+  const now = new Date();
+  const receiptDate = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+  const highest = await prisma.receipt.aggregate({
+    where: { receiptDate },
+    _max: { receiptNo: true },
+  });
+  const firstNo = (highest._max.receiptNo ?? 0) + 1;
+
   // Sale 1: 2kg rice + 2kg sugar = 800.  Sale 2: 1kg rice = 300.
-  await prisma.sale.create({
+  await prisma.receipt.create({
     data: {
       customerId: customer.id,
       totalAmount: 800,
+      receiptDate,
+      receiptNo: firstNo,
       items: {
         create: [
           { productId: rice.id, quantity: 2, unitPriceSnapshot: 300, lineTotal: 600 },
@@ -68,10 +84,12 @@ async function main(): Promise<void> {
       },
     },
   });
-  await prisma.sale.create({
+  await prisma.receipt.create({
     data: {
       customerId: customer.id,
       totalAmount: 300,
+      receiptDate,
+      receiptNo: firstNo + 1,
       items: {
         create: [
           { productId: rice.id, quantity: 1, unitPriceSnapshot: 300, lineTotal: 300 },

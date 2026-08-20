@@ -20,7 +20,7 @@ model Customer {
   normalizedName String   @unique @map("normalized_name")
   createdAt      DateTime @default(now()) @map("created_at")
 
-  sales Sale[]
+  receipts Receipt[]
 
   @@map("customers")
 }
@@ -38,7 +38,14 @@ model Product {
   @@map("products")
 }
 
-model Sale {
+// One confirmed sale: who bought, when, what it came to, and the number written
+// on the paper receipt. The line items live in sale_items.
+//
+// Named for the receipt rather than the sale because that is what a row is to
+// the owner — the thing handed over the counter, and the thing reprinted later.
+// The child table is still sale_items: renaming it would rewrite a foreign key
+// for no gain, and "the items on this sale" is how the code already reads.
+model Receipt {
   id          Int      @id @default(autoincrement())
   customerId  Int      @map("customer_id")
   totalAmount Decimal  @map("total_amount") @db.Decimal(12, 2)
@@ -66,7 +73,7 @@ model Sale {
   @@unique([receiptDate, receiptNo])
   @@index([soldAt])
   @@index([customerId])
-  @@map("sales")
+  @@map("receipts")
 }
 
 model SaleItem {
@@ -80,7 +87,9 @@ model SaleItem {
   unitPriceSnapshot Decimal @map("unit_price_snapshot") @db.Decimal(12, 2)
   lineTotal         Decimal @map("line_total") @db.Decimal(12, 2)
 
-  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  // The scalar stays saleId/sale_id: only the parent table was renamed, so
+  // renaming this column would mean rewriting a foreign key to no purpose.
+  receipt Receipt @relation(fields: [saleId], references: [id], onDelete: Cascade)
   // Deliberately not cascading: a product must not be deletable out from under
   // the sales that reference it.
   product Product @relation(fields: [productId], references: [id])

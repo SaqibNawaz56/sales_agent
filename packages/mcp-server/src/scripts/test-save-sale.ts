@@ -32,7 +32,7 @@ async function cleanup(): Promise<void> {
   });
   if (customer) {
     // sale_items cascade from sales.
-    await prisma.sale.deleteMany({ where: { customerId: customer.id } });
+    await prisma.receipt.deleteMany({ where: { customerId: customer.id } });
     await prisma.customer.delete({ where: { id: customer.id } });
   }
 }
@@ -110,7 +110,7 @@ async function main(): Promise<void> {
   );
 
   console.log("\nstale confirmation is refused");
-  const salesBefore = await prisma.sale.count();
+  const salesBefore = await prisma.receipt.count();
   const stale = await call("save_sale", {
     customerId: customer.id,
     // 300 was the price the owner saw; the catalogue now says 350.
@@ -119,8 +119,8 @@ async function main(): Promise<void> {
   check("write was rejected", stale.isError, stale.parsed);
   check(
     "no sale was written",
-    (await prisma.sale.count()) === salesBefore,
-    { before: salesBefore, after: await prisma.sale.count() },
+    (await prisma.receipt.count()) === salesBefore,
+    { before: salesBefore, after: await prisma.receipt.count() },
   );
 
   await prisma.product.update({
@@ -129,7 +129,7 @@ async function main(): Promise<void> {
   });
 
   console.log("\ncriterion 8 - a failed write leaves nothing behind");
-  const beforeBad = await prisma.sale.count();
+  const beforeBad = await prisma.receipt.count();
   const beforeItems = await prisma.saleItem.count();
   const bad = await call("save_sale", {
     customerId: customer.id,
@@ -141,8 +141,8 @@ async function main(): Promise<void> {
   check("write was rejected", bad.isError, bad.parsed);
   check(
     "no partial sale row",
-    (await prisma.sale.count()) === beforeBad,
-    { before: beforeBad, after: await prisma.sale.count() },
+    (await prisma.receipt.count()) === beforeBad,
+    { before: beforeBad, after: await prisma.receipt.count() },
   );
   check(
     "no orphan line items - the valid item was rolled back too",

@@ -33,7 +33,7 @@ export function registerReceiptTools(server: McpServer): void {
         .object({ saleId: z.number().int().positive() })
         .parse(args);
 
-      const sale = await prisma.sale.findUnique({
+      const sale = await prisma.receipt.findUnique({
         where: { id: saleId },
         include: {
           customer: true,

@@ -163,13 +163,13 @@ async function writeSale(
     // carry the next day's receipt date.
     const soldAt = new Date();
     const receiptDate = utcDayOf(soldAt);
-    const highest = await tx.sale.aggregate({
+    const highest = await tx.receipt.aggregate({
       where: { receiptDate },
       _max: { receiptNo: true },
     });
     const receiptNo = (highest._max.receiptNo ?? 0) + 1;
 
-    const sale = await tx.sale.create({
+    const sale = await tx.receipt.create({
       data: {
         customerId,
         totalAmount: total,
