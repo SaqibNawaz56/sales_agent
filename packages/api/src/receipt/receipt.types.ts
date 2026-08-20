@@ -8,6 +8,21 @@
  * only positions strings it is handed.
  */
 
+/**
+ * Enough to offer one receipt: which sale it belongs to, and what to call it.
+ *
+ * Issued by two different kinds of turn — the confirmation that has just
+ * written a sale, and an answer about a sale written weeks ago — so it says
+ * nothing about when the sale happened or how it was found. The client renders
+ * the number and follows the URL it was handed, exactly the same either way.
+ */
+export interface ReceiptRef {
+  saleId: number;
+  receiptNo: number;
+  /** ISO date, YYYY-MM-DD. */
+  receiptDate: string;
+}
+
 export interface SaleReceiptItem {
   productId: number;
   productName: string;

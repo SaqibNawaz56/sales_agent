@@ -303,6 +303,11 @@ export class SaleService {
         draft: null,
         awaitingConfirmation: false,
         question: null,
+        // Set when the answer was about one identifiable sale — "what did Ali
+        // buy last time" — so the owner can pull that receipt without having to
+        // find the sale again. Null for every other question, which is also
+        // what clears the link left by a previous answer.
+        receipt: outcome.receipt ?? null,
       };
     }
 

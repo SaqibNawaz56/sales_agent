@@ -47,9 +47,10 @@ export interface PendingQuestion {
 }
 
 /**
- * Where to get the receipt for a sale that was just written.
+ * Where to get the receipt for one sale.
  *
- * Present only on a confirmation that actually saved something. The `url` is
+ * Present on two kinds of turn: a confirmation that just saved a sale, and an
+ * answer about a single past sale ("what did Ali buy last time"). The `url` is
  * built by the server, so the browser never has to know how receipt routes are
  * shaped — it follows a link it was handed, exactly as it echoes back a choice
  * id it was offered.

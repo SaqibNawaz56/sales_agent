@@ -1,7 +1,8 @@
 import type { ReceiptRef } from "../api";
 
 /**
- * The receipt for the sale that was just saved.
+ * The receipt for the sale currently on offer — one just saved, or one an
+ * answer just described.
  *
  * A plain anchor with `download`, not a fetch-and-blob dance: the endpoint
  * already sends Content-Disposition: attachment, so the browser saves the file

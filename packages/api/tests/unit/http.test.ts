@@ -4,7 +4,11 @@ import {
   confirmSchema,
   saleIdParamSchema,
 } from "../../src/http/request.schemas";
-import { presentDraft, presentQuestion } from "../../src/http/present";
+import {
+  presentDraft,
+  presentQuestion,
+  presentReceipt,
+} from "../../src/http/present";
 import { buildCustomerQuestion } from "../../src/questions";
 import { completeDraft, draftWith, rawItem, resolvedItem } from "./helpers/fixtures";
 
@@ -101,6 +105,33 @@ describe("presentQuestion", () => {
     };
 
     expect(presentQuestion(draft)?.choices).toEqual([]);
+  });
+});
+
+/**
+ * The receipt as the client receives it.
+ *
+ * Shared by both routes that can offer one — the confirmation that writes a
+ * sale, and a query answer about a single past sale — so the browser cannot
+ * tell them apart, and needs no second way to render a link.
+ */
+describe("presentReceipt", () => {
+  const ref = { saleId: 92, receiptNo: 1, receiptDate: "2026-08-20" };
+
+  it("builds the download URL so the client never has to know the route shape", () => {
+    expect(presentReceipt(ref)).toEqual({
+      saleId: 92,
+      receiptNo: 1,
+      receiptDate: "2026-08-20",
+      url: "/api/sales/92/receipt",
+    });
+  });
+
+  it("is null when there is no receipt to offer", () => {
+    // Both spellings reach here: a turn that saved nothing, and a query whose
+    // answer covered no single sale.
+    expect(presentReceipt(null)).toBeNull();
+    expect(presentReceipt(undefined)).toBeNull();
   });
 });
 

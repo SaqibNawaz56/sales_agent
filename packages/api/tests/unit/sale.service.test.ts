@@ -250,6 +250,59 @@ describe("handle: the query path", () => {
     expect(result.draft).toBeNull();
     expect(result.awaitingConfirmation).toBe(false);
     expect(result.reply).toBe("On 2026-08-10 you made 3 sales totalling 2400.");
+    // An aggregate names no single sale, so there is nothing to download.
+    expect(result.receipt).toBeNull();
+  });
+
+  it("carries the receipt through when the answer is about one past sale", async () => {
+    // The read path never writes, but it can still hand back a receipt: the
+    // sale already exists, and the owner asked about it by name.
+    call.mockImplementation(async (tool) => {
+      if (tool === "list_customers") {
+        return { customers: [{ id: 7, name: "Ali" }] } as never;
+      }
+      if (tool === "query_last_sale_for_customer") {
+        return {
+          found: true,
+          hasSale: true,
+          customerName: "Ali",
+          saleId: 49,
+          receiptNo: 4,
+          date: "2026-08-10",
+          total: 600,
+          items: [
+            {
+              productName: "Rice",
+              unit: "kg",
+              quantity: 2,
+              unitPrice: 300,
+              lineTotal: 600,
+            },
+          ],
+        } as never;
+      }
+      return {} as never;
+    });
+    extract.mockResolvedValue({ intent: "query", product: null, customer: null, items: [] });
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      // The token matches the id list_customers returned above; the map is
+      // keyed by customer id, so customer_7 is the one that detokenises.
+      customer: "customer_7",
+      product: null,
+      date: null,
+    });
+
+    const result = await sales.handle("s1", "what did Ali buy last time?");
+
+    expect(result.reply).toContain("Ali's last sale was on 2026-08-10");
+    expect(result.receipt).toEqual({
+      saleId: 49,
+      receiptNo: 4,
+      receiptDate: "2026-08-10",
+    });
+    // Still a read. Answering a question must never reach the write tool.
+    expect(call).not.toHaveBeenCalledWith("save_sale", expect.anything());
   });
 });
 

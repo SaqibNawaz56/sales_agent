@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 
 import { SaleService } from "../sales";
-import { presentDraft, presentQuestion } from "./present";
+import { presentDraft, presentQuestion, presentReceipt } from "./present";
 import { confirmSchema, type ConfirmRequest } from "./request.schemas";
 import { ZodValidationPipe } from "./zod-validation.pipe";
 
@@ -50,16 +50,7 @@ export class SalesController {
         question: presentQuestion(result.draft),
         awaitingConfirmation: result.awaitingConfirmation,
         saved: dto.confirmed && result.draft === null,
-        // The URL is built here rather than in the browser, so the client never
-        // has to know how receipt routes are shaped.
-        receipt: result.receipt
-          ? {
-              saleId: result.receipt.saleId,
-              receiptNo: result.receipt.receiptNo,
-              receiptDate: result.receipt.receiptDate,
-              url: `/api/sales/${result.receipt.saleId}/receipt`,
-            }
-          : null,
+        receipt: presentReceipt(result.receipt),
       };
     } catch (error) {
       this.logger.error("confirm failed", error as Error);

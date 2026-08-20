@@ -1,4 +1,5 @@
 import { grandTotal, lineTotal, type DraftSale } from "../draft";
+import type { ReceiptRef } from "../receipt";
 
 /**
  * The shape the client renders. Derived from the draft rather than exposing it
@@ -18,6 +19,26 @@ export function presentDraft(draft: DraftSale | null) {
       lineTotal: lineTotal(item),
     })),
     grandTotal: grandTotal(draft),
+  };
+}
+
+/**
+ * A downloadable receipt, with the URL already built.
+ *
+ * The URL is assembled here rather than in the browser, so the client never has
+ * to know how receipt routes are shaped — it follows a link it was handed, the
+ * same way it echoes back a choice id it was offered. Shared by both routes
+ * that can offer one: the confirmation that writes a sale, and a query answer
+ * about a single past sale.
+ */
+export function presentReceipt(receipt: ReceiptRef | null | undefined) {
+  if (!receipt) return null;
+
+  return {
+    saleId: receipt.saleId,
+    receiptNo: receipt.receiptNo,
+    receiptDate: receipt.receiptDate,
+    url: `/api/sales/${receipt.saleId}/receipt`,
   };
 }
 

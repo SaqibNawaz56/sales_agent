@@ -19,7 +19,10 @@ export interface Conversation {
   awaiting: boolean;
   busy: boolean;
   error: string | null;
-  /** The receipt for the last sale saved, until the next one begins. */
+  /**
+   * The receipt currently on offer: the sale just saved, or the single past
+   * sale an answer just described. Cleared by the next turn either way.
+   */
   receipt: ReceiptRef | null;
   send: (text: string) => Promise<void>;
   choose: (choiceId: string) => Promise<void>;
@@ -83,6 +86,10 @@ export function useConversation(sessionId: string): Conversation {
           response,
           response.awaitingConfirmation ? SALE_READY : response.reply,
         );
+        // Set when the answer was about one past sale — "what did Ali buy last
+        // time" — so the receipt for it is offered beside the answer. Null for
+        // anything else, so it does not survive into the next turn.
+        setReceipt(response.receipt ?? null);
       } catch (failure) {
         // The draft survives on the server, so the owner retries one line rather
         // than losing a half-built sale (R6).

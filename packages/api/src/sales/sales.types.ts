@@ -1,18 +1,5 @@
 import type { AnswerChoice, DraftSale } from "../draft";
-
-/**
- * Enough to fetch the receipt for a sale that was just written.
- *
- * Present only on the turn that saved something. The client needs the id to
- * build the download URL, and the number so it can say which receipt it is
- * offering — "Receipt 003" rather than a bare link.
- */
-export interface WrittenReceipt {
-  saleId: number;
-  receiptNo: number;
-  /** ISO date, YYYY-MM-DD. */
-  receiptDate: string;
-}
+import type { ReceiptRef } from "../receipt";
 
 export interface TurnResult {
   reply: string;
@@ -21,8 +8,12 @@ export interface TurnResult {
   awaitingConfirmation: boolean;
   /** Set when the controller is waiting on an answer to a specific question. */
   question: string | null;
-  /** Set only by a confirmation that actually wrote a sale. */
-  receipt?: WrittenReceipt | null;
+  /**
+   * A receipt the owner may download, when this turn produced exactly one sale
+   * to offer: a confirmation that wrote one, or an answer about a single past
+   * sale. Null on every other turn, which is what clears a stale link.
+   */
+  receipt?: ReceiptRef | null;
   /**
    * A question that did not come from a draft sale — currently only the price
    * change confirmation. presentQuestion derives its output from the draft, and

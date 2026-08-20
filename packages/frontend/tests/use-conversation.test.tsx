@@ -263,6 +263,45 @@ describe("the receipt", () => {
     expect(result.current.receipt).toBeNull();
   });
 
+  it("is offered when an answer describes one past sale", async () => {
+    // "What did Ali buy last time?" — nothing was written, but the answer is
+    // about exactly one sale, so its receipt comes back with the reply.
+    send.mockResolvedValue(
+      turn({
+        reply: "Ali's last sale was on 2026-08-10: 2 kg of Rice at 300.",
+        receipt,
+      }),
+    );
+    const { result } = renderHook(() => useConversation("s1"));
+
+    await act(async () => {
+      await result.current.send("what did Ali buy last time?");
+    });
+
+    expect(result.current.receipt).toEqual(receipt);
+    // Still no draft and nothing awaiting — a question is not a sale.
+    expect(result.current.draft).toBeNull();
+    expect(result.current.awaiting).toBe(false);
+  });
+
+  it("clears when the next question carries no receipt", async () => {
+    // One answer's receipt must not sit under the next answer.
+    send.mockResolvedValueOnce(turn({ reply: "Ali's last sale...", receipt }));
+    send.mockResolvedValueOnce(turn({ reply: "You sold 12 kg of Rice." }));
+    const { result } = renderHook(() => useConversation("s1"));
+
+    await act(async () => {
+      await result.current.send("what did Ali buy last time?");
+    });
+    expect(result.current.receipt).toEqual(receipt);
+
+    await act(async () => {
+      await result.current.send("how much rice have I sold?");
+    });
+
+    expect(result.current.receipt).toBeNull();
+  });
+
   it("survives a failed save without offering a link", async () => {
     resolve.mockRejectedValue(new Error("MCP server unreachable"));
     const { result } = renderHook(() => useConversation("s1"));

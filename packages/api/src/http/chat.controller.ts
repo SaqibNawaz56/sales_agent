@@ -10,7 +10,7 @@ import {
 } from "@nestjs/common";
 
 import { SaleService } from "../sales";
-import { presentDraft, presentQuestion } from "./present";
+import { presentDraft, presentQuestion, presentReceipt } from "./present";
 import {
   answerSchema,
   chatSchema,
@@ -64,6 +64,11 @@ export class ChatController {
         // is why the client needs no change to render it.
         question: presentQuestion(result.draft) ?? result.pendingQuestion ?? null,
         awaitingConfirmation: result.awaitingConfirmation,
+        // This endpoint still writes nothing. A receipt appears here when the
+        // turn was a question about one past sale — "what did Ali buy last
+        // time" — offering the receipt for the sale just described. Null
+        // otherwise, which clears the link a previous answer left up.
+        receipt: presentReceipt(result.receipt),
       };
     } catch (error) {
       this.logger.error("chat turn failed", error as Error);

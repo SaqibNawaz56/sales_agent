@@ -116,6 +116,9 @@ describe("daily_total", () => {
     const outcome = await answerQuery("what did I sell today?");
 
     expect(outcome.answer).toBe("On 2026-08-10 you made 3 sales totalling 2400.");
+    // An aggregate covers many sales, so there is no single receipt to offer.
+    // Only last_sale_for_customer names one.
+    expect(outcome.receipt).toBeNull();
   });
 
   it("says so when there were none", async () => {
@@ -283,6 +286,84 @@ describe("last_sale_for_customer", () => {
     await answerQuery("what did Ali buy last time?");
 
     expect(route.mock.calls[0][0]).toBe("what did customer_1 buy last time?");
+  });
+
+  /*
+   * The receipt offered beside the answer.
+   *
+   * This is the only route that can offer one, because it is the only route
+   * whose answer is about exactly one sale. The identifiers come from the
+   * tool's own result — the model is never told this sale's id and so cannot
+   * have chosen which receipt the owner is handed.
+   */
+  it("offers the receipt for the sale it just described", async () => {
+    stubServer(() => lastSale);
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Ali buy last time?");
+
+    expect(outcome.receipt).toEqual({
+      saleId: 49,
+      receiptNo: 4,
+      receiptDate: "2026-08-10",
+    });
+  });
+
+  it("offers a receipt even when the sale has no line items", async () => {
+    // The degenerate sale that still has a receipt number: the answer falls
+    // back to a bare total, but the receipt is no less downloadable.
+    stubServer(() => ({ ...lastSale, items: [] }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Ali buy last time?");
+
+    expect(outcome.answer).toBe("Ali's last sale on 2026-08-10 came to 1800.");
+    expect(outcome.receipt).toEqual({
+      saleId: 49,
+      receiptNo: 4,
+      receiptDate: "2026-08-10",
+    });
+  });
+
+  it("offers no receipt for a customer who has never bought anything", async () => {
+    stubServer(() => ({ found: true, hasSale: false, customerName: "Bilal" }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_2",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Bilal buy last time?");
+
+    expect(outcome.receipt).toBeNull();
+  });
+
+  it("offers no receipt rather than a broken one when the sale cannot be identified", async () => {
+    // A link built from a missing id would 404 on click. Answering without a
+    // receipt is the smaller failure, so a partial result yields none.
+    stubServer(() => ({ ...lastSale, saleId: undefined }));
+    route.mockResolvedValue({
+      tool: "last_sale_for_customer",
+      customer: "customer_1",
+      product: null,
+      date: null,
+    });
+
+    const outcome = await answerQuery("what did Ali buy last time?");
+
+    expect(outcome.answer).toContain("Ali's last sale was on 2026-08-10");
+    expect(outcome.receipt).toBeNull();
   });
 
   it("handles a single-item sale", async () => {
